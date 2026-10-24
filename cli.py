@@ -11,7 +11,7 @@ from pathlib import Path
 from imap_tools import MailMessage
 
 from app import config
-from app.db import connect
+from app.db import connect, mark_reported_debts
 from app.fetcher import Result, check, fetch, process_message
 from app.providers import find_provider
 
@@ -24,6 +24,12 @@ def print_result(r: Result) -> None:
         print(f"    UPOZORENJE: dug iz prethodnog perioda {b.previous_debt} din")
     for note in r.notes:
         print(f"    - {note}")
+
+
+def report_debts(conn) -> None:
+    for p in mark_reported_debts(conn):
+        print(f"NIJE PLAĆEN: račun {p['reference']} ({p['period_from']} - {p['period_to']}), "
+              f"prema dugu u računu {p['reporter_reference']}")
 
 
 def cmd_parse(args) -> int:
@@ -46,6 +52,8 @@ def cmd_parse(args) -> int:
             result = Result(bill, *check(bill, config.MAX_AMOUNT), bill_id=None)
         print(f"{path}:")
         print_result(result)
+    if conn:
+        report_debts(conn)
     return 0
 
 
@@ -58,6 +66,7 @@ def cmd_fetch(args) -> int:
     for r in results:
         print_result(r)
     print(f"Novih računa: {sum(1 for r in results if r.bill_id)}")
+    report_debts(conn)
     return 0
 
 

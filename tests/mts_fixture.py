@@ -22,6 +22,20 @@ BILL = {
     "debt": "2.449,00",
     "issue_date": "01.10.2026",
     "due_date": "15.10.2026",
+    "period_from": "01.09.2026",
+    "period_to": "30.09.2026",
+}
+
+# The month before BILL, whose unpaid amount is BILL's debt. 98 - int("299021000000200") % 97 == 45
+PREVIOUS_BILL = {
+    **BILL,
+    "reference": "45-299-021-0000002",
+    "amount": "2.449,00",
+    "debt": "0,00",
+    "issue_date": "01.09.2026",
+    "due_date": "15.09.2026",
+    "period_from": "01.08.2026",
+    "period_to": "31.08.2026",
 }
 
 AUTH_OK = (
@@ -57,16 +71,16 @@ def pdf_lines(b: dict) -> list[str]:
         f"Mesto i datum izdavanja: www.mts.rs {b['street']}",
         f"Beograd, {b['issue_date']}.",
         "Datum prometa: BEOGRAD",
-        "30.09.2026.",
+        f"{b['period_to']}.",
         "Rok za plaćanje:",
         f"{b['due_date']}.",
-        "Za period: 01.09.2026. - 30.09.2026.",
+        f"Za period: {b['period_from']}. - {b['period_to']}.",
         "1. Naknada 3.140,52 83,33 3.057,19 20% 611,44 3.668,63",
         "3. Zatezna kamata * 13,84",
         f"UKUPNO ZA PLAĆANJE: {b['amount']}",
         f"Vaše dugovanje na dan {b['issue_date']} iznosi {b['debt']}. Da biste izbegli",
         f"izmirite svoje dugovanje. DUG IZ PRETHODNOG PERIODA: {b['debt']}",
-        f"Račun za telekom usluge: 01.09.2026.-30.09.2026. Šifra korisnika: {customer_id}",
+        f"Račun za telekom usluge: {b['period_from']}.-{b['period_to']}. Šifra korisnika: {customer_id}",
         f"Nalogodavac: 205-506102-26 ={b['amount']}",
         b["name"],
         f"{b['street']} 97 {b['reference']} 97 {b['reference']}",

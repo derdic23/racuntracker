@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS bills (
     verification TEXT NOT NULL CHECK (verification IN ('verified', 'needs_review', 'suspicious')),
     review_notes TEXT,
     paid_at TEXT,
+    -- Later bill whose "dug iz prethodnog perioda" shows this one was not paid
+    reported_unpaid_by INTEGER REFERENCES bills(id) ON DELETE SET NULL,
     gmail_message_id TEXT UNIQUE,  -- RFC Message-ID header
     created_at TEXT NOT NULL
 );
@@ -64,7 +66,39 @@ def connect(path: Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    columns = {r["name"] for r in conn.execute("PRAGMA table_info(bills)")}
+    if "reported_unpaid_by" not in columns:  # databases created before this column existed
+        conn.execute("ALTER TABLE bills ADD COLUMN reported_unpaid_by INTEGER REFERENCES bills(id) ON DELETE SET NULL")
     return conn
+
+
+def mark_reported_debts(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Flag bills that a later bill reports as unpaid (debt from the previous period).
+
+    The previous bill is the one of the same customer and sub-account whose period ends the day
+    before the later bill's period starts. Runs over all bills, so the order of import does not matter.
+    Returns the newly flagged bills with the reporting bill's reference and issue date.
+    """
+    pairs = conn.execute("""
+        SELECT p.id, p.reference, p.period_from, p.period_to, p.status, p.paid_at,
+               b.id AS reporter_id, b.reference AS reporter_reference, b.issue_date AS reporter_issue_date
+        FROM bills b
+        JOIN bills p ON p.provider = b.provider AND p.customer_id = b.customer_id
+            AND p.sub_account = b.sub_account AND p.period_to = date(b.period_from, '-1 day')
+        WHERE CAST(b.previous_debt AS REAL) > 0 AND p.reported_unpaid_by IS NULL
+    """).fetchall()
+    with conn:
+        for p in pairs:
+            conn.execute("UPDATE bills SET reported_unpaid_by = ? WHERE id = ?", (p["reporter_id"], p["id"]))
+            # Marked paid before the later bill was issued, yet mts still counts it as debt
+            if p["status"] == "paid" and (p["paid_at"] or "") < p["reporter_issue_date"]:
+                note = f"mts u računu {p['reporter_reference']} prijavljuje da ovaj račun nije plaćen."
+                conn.execute(
+                    "UPDATE bills SET status = 'unpaid', paid_at = NULL, "
+                    "review_notes = COALESCE(review_notes || char(10), '') || ? WHERE id = ?",
+                    (note, p["id"]),
+                )
+    return pairs
 
 
 def has_message(conn: sqlite3.Connection, message_id: str) -> bool:

@@ -2,9 +2,11 @@ from decimal import Decimal
 
 from imap_tools import MailMessage
 
-from app.db import connect
+import pytest
+
+from app.db import connect, mark_reported_debts
 from app.fetcher import process_message
-from mts_fixture import BILL, build_eml
+from mts_fixture import BILL, PREVIOUS_BILL, build_eml
 
 MAX = Decimal("100000")
 
@@ -45,3 +47,61 @@ def test_non_bill_is_ignored(tmp_path):
     conn = connect(tmp_path / "test.db")
     msg = MailMessage.from_bytes(build_eml(sender="news@example.com"))
     assert process_message(conn, msg, tmp_path / "pdfs", MAX) is None
+
+
+def store(conn, tmp_path, bill, n):
+    msg = MailMessage.from_bytes(build_eml(bill, message_id=f"<test-{n}@mtsracun.rs>"))
+    return process_message(conn, msg, tmp_path / "pdfs", MAX).bill_id
+
+
+@pytest.mark.parametrize("order", [(PREVIOUS_BILL, BILL), (BILL, PREVIOUS_BILL)])
+def test_debt_marks_previous_bill_unpaid(tmp_path, order):
+    conn = connect(tmp_path / "test.db")
+    ids = {b["reference"]: store(conn, tmp_path, b, i) for i, b in enumerate(order)}
+
+    flagged = mark_reported_debts(conn)
+    assert [(p["reference"], p["reporter_reference"]) for p in flagged] == [(PREVIOUS_BILL["reference"], BILL["reference"])]
+    rows = {r["reference"]: r["reported_unpaid_by"] for r in conn.execute("SELECT * FROM bills")}
+    assert rows == {PREVIOUS_BILL["reference"]: ids[BILL["reference"]], BILL["reference"]: None}
+    assert mark_reported_debts(conn) == []  # already flagged
+
+
+def test_debt_reverts_bill_marked_paid_before_next_issue(tmp_path):
+    conn = connect(tmp_path / "test.db")
+    store(conn, tmp_path, PREVIOUS_BILL, 1)
+    conn.execute("UPDATE bills SET status = 'paid', paid_at = '2026-09-20T10:00:00'")
+    store(conn, tmp_path, BILL, 2)
+    mark_reported_debts(conn)
+    row = conn.execute("SELECT * FROM bills WHERE reference = ?", (PREVIOUS_BILL["reference"],)).fetchone()
+    assert (row["status"], row["paid_at"]) == ("unpaid", None)
+    assert "prijavljuje da ovaj račun nije plaćen" in row["review_notes"]
+
+
+def test_payment_after_next_issue_is_kept(tmp_path):
+    conn = connect(tmp_path / "test.db")
+    store(conn, tmp_path, PREVIOUS_BILL, 1)
+    conn.execute("UPDATE bills SET status = 'paid', paid_at = '2026-10-03T10:00:00'")
+    store(conn, tmp_path, BILL, 2)
+    mark_reported_debts(conn)
+    row = conn.execute("SELECT * FROM bills WHERE reference = ?", (PREVIOUS_BILL["reference"],)).fetchone()
+    assert row["status"] == "paid" and row["reported_unpaid_by"]
+
+
+def test_no_debt_or_gap_marks_nothing(tmp_path):
+    conn = connect(tmp_path / "test.db")
+    store(conn, tmp_path, {**PREVIOUS_BILL, "period_to": "30.08.2026"}, 1)  # not adjacent
+    store(conn, tmp_path, BILL, 2)
+    assert mark_reported_debts(conn) == []
+    conn2 = connect(tmp_path / "test2.db")
+    store(conn2, tmp_path, PREVIOUS_BILL, 1)
+    store(conn2, tmp_path, {**BILL, "debt": "0,00"}, 2)
+    assert mark_reported_debts(conn2) == []
+
+
+def test_old_database_gets_new_column(tmp_path):
+    path = tmp_path / "old.db"
+    conn = connect(path)
+    conn.execute("ALTER TABLE bills DROP COLUMN reported_unpaid_by")
+    conn.close()
+    columns = {r["name"] for r in connect(path).execute("PRAGMA table_info(bills)")}
+    assert "reported_unpaid_by" in columns
