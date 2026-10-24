@@ -54,9 +54,12 @@ def process_message(conn: sqlite3.Connection, message: MailMessage, pdf_dir: Pat
 
 
 def _folders(mailbox: MailBox, label: str) -> list[tuple[str, bool]]:
-    """(folder, filter_by_sender). The label holds only bills; INBOX and Spam are a fallback."""
-    spam = next((f.name for f in mailbox.folder.list() if "\\Junk" in f.flags), None)
-    return [(label, False), ("INBOX", True)] + ([(spam, True)] if spam else [])
+    """(folder, filter_by_sender). The label holds only bills; All Mail and Spam are a fallback."""
+    folders = mailbox.folder.list()
+    # Found by flag because Gmail localizes names; All Mail also covers archived mail, unlike INBOX
+    all_mail = next((f.name for f in folders if "\\All" in f.flags), "INBOX")
+    spam = next((f.name for f in folders if "\\Junk" in f.flags), None)
+    return [(label, False), (all_mail, True)] + ([(spam, True)] if spam else [])
 
 
 def fetch(conn: sqlite3.Connection, address: str, password: str, label: str, pdf_dir: Path, max_amount: Decimal) -> list[Result]:
