@@ -1,0 +1,9 @@
+# Private data: never commit
+samples/private/
+data/
+.env
+
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
