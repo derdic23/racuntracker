@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% macro profile_fields(p) %}
+<label>Ime i prezime <input name="full_name" value="{{ p.full_name if p else '' }}" required></label>
+<label>Adresa <input name="address" value="{{ p.address or '' if p else '' }}"></label>
+<label>Mesto <input name="city" value="{{ p.city or '' if p else '' }}"></label>
+<label>Telefon <input type="tel" name="phone" value="{{ p.phone or '' if p else '' }}"></label>
+{% endmacro %}
+
+{% macro profile_select(selected) %}
+<select name="profile_id" aria-label="Profil">
+  <option value="">bez profila</option>
+  {% for p in profiles %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.full_name }}</option>{% endfor %}
+</select>
+{% endmacro %}
+{% block title %}Podešavanja{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('bills.index') }}">&larr; Svi računi</a></p>
+<h1>Podešavanja</h1>
+
+<section class="card">
+  <h2>Gmail</h2>
+  {% if gmail.password_broken %}
+  <p class="alert">Sačuvani app password ne može da se pročita (promenjen je SECRET_KEY). Upiši ga ponovo.</p>
+  {% endif %}
+  <form class="fields" method="post" action="{{ url_for('settings.save_gmail') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label>Gmail adresa <input type="email" name="address" value="{{ gmail.address }}" autocomplete="off"></label>
+    <label>App password
+      <input type="password" name="password" autocomplete="new-password"
+             placeholder="{{ 'sačuvan, ostavi prazno da ostane isti' if gmail.has_password else '16 slova iz Google naloga' }}">
+    </label>
+    <label>Labela <input name="label" value="{{ gmail.label }}"></label>
+    <div class="actions">
+      <button class="primary">Sačuvaj</button>
+      <button formaction="{{ url_for('settings.test_gmail') }}">Testiraj vezu</button>
+    </div>
+    <p class="hint">"Testiraj vezu" proverava sačuvana podešavanja.</p>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Profili</h2>
+  {% for p in profiles %}
+  <form class="fields" method="post" action="{{ url_for('settings.save_profile') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="id" value="{{ p.id }}">
+    {{ profile_fields(p) }}
+    <div class="actions">
+      <button class="primary">Sačuvaj</button>
+      <button formaction="{{ url_for('settings.delete_profile', profile_id=p.id) }}"
+              data-confirm="Obrisati profil {{ p.full_name }}? Šifre korisnika ostaju, bez profila.">Obriši</button>
+    </div>
+  </form>
+  <hr>
+  {% endfor %}
+  <form class="fields" method="post" action="{{ url_for('settings.save_profile') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <h3>Novi profil</h3>
+    {{ profile_fields(none) }}
+    <div class="actions"><button class="primary">Dodaj profil</button></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Šifre korisnika</h2>
+  {% for c in customer_ids %}
+  <form class="inline" method="post" action="{{ url_for('settings.save_customer_id') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="provider" value="{{ c.provider }}">
+    <input type="hidden" name="customer_id" value="{{ c.customer_id }}">
+    <span>{{ c.provider }} {{ c.customer_id }}</span>
+    {{ profile_select(c.profile_id) }}
+    <button>Sačuvaj</button>
+    <button formaction="{{ url_for('settings.delete_customer_id', row_id=c.id) }}"
+            data-confirm="Obrisati šifru {{ c.customer_id }}?">Obriši</button>
+  </form>
+  {% else %}
+  <p class="empty">Nema sačuvanih šifri.</p>
+  {% endfor %}
+  <form class="inline" method="post" action="{{ url_for('settings.save_customer_id') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <select name="provider" aria-label="Provajder">{% for name in providers %}<option>{{ name }}</option>{% endfor %}</select>
+    <input name="customer_id" placeholder="Šifra korisnika" aria-label="Šifra korisnika" required>
+    {{ profile_select(none) }}
+    <button class="primary">Dodaj</button>
+  </form>
+</section>
+{% endblock %}

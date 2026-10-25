@@ -19,20 +19,46 @@
   {% if bill.reported_unpaid_by and bill.status == 'unpaid' %}<span class="tag warn">mts: nije plaćen</span>{% endif %}
 </a>
 {% endmacro %}
-{% block content %}
-<h1>Neplaćeni</h1>
-{% for month, bills in unpaid %}
+{% macro month_groups(months) %}
+{% for month, groups in months %}
   <h2>{{ month }}</h2>
-  {% for bill in bills %}{{ row(bill) }}{% endfor %}
-{% else %}
-  <p class="empty">Nema neplaćenih računa.</p>
+  {% for profile, bills in groups %}
+    {% if show_profiles %}<h3>{{ profile }}</h3>{% endif %}
+    {% for bill in bills %}{{ row(bill) }}{% endfor %}
+  {% endfor %}
+{% else %}{{ caller() }}{% endfor %}
+{% endmacro %}
+{% block content %}
+<form class="toolbar" method="post" action="{{ url_for('bills.check_mail') }}">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <button data-busy="Proveravam...">Proveri mejl sada</button>
+</form>
+
+{% for c in unknown %}
+<div class="alert">
+  Nova šifra korisnika: {{ c.provider }} {{ c.customer_id }}. Kom profilu pripada?
+  {% if not profiles %}<a href="{{ url_for('settings.index') }}">Napravi profil u Podešavanjima.</a>{% endif %}
+  <form class="inline" method="post" action="{{ url_for('settings.save_customer_id') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="back" value="list">
+    <input type="hidden" name="provider" value="{{ c.provider }}">
+    <input type="hidden" name="customer_id" value="{{ c.customer_id }}">
+    <select name="profile_id" aria-label="Profil">
+      <option value="">bez profila</option>
+      {% for p in profiles %}<option value="{{ p.id }}">{{ p.full_name }}</option>{% endfor %}
+    </select>
+    <button>Sačuvaj</button>
+  </form>
+</div>
 {% endfor %}
 
+<h1>Neplaćeni</h1>
+{% call month_groups(unpaid) %}
+  <p class="empty">Nema neplaćenih računa.</p>
+{% endcall %}
+
 <h1>Plaćeni</h1>
-{% for month, bills in paid %}
-  <h2>{{ month }}</h2>
-  {% for bill in bills %}{{ row(bill) }}{% endfor %}
-{% else %}
+{% call month_groups(paid) %}
   <p class="empty">Nema plaćenih računa.</p>
-{% endfor %}
+{% endcall %}
 {% endblock %}

@@ -101,6 +101,28 @@ def mark_reported_debts(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     return pairs
 
 
+def get_settings(conn: sqlite3.Connection) -> dict[str, str]:
+    return {r["key"]: r["value"] for r in conn.execute("SELECT key, value FROM settings")}
+
+
+def set_settings(conn: sqlite3.Connection, **values: str) -> None:
+    with conn:
+        conn.executemany(
+            "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            values.items(),
+        )
+
+
+def unknown_customer_ids(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Customer IDs from bills that are not in customer_ids yet (to ask which profile they belong to)."""
+    return conn.execute("""
+        SELECT DISTINCT provider, customer_id FROM bills b
+        WHERE customer_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM customer_ids c WHERE c.provider = b.provider AND c.customer_id = b.customer_id)
+        ORDER BY provider, customer_id
+    """).fetchall()
+
+
 def has_message(conn: sqlite3.Connection, message_id: str) -> bool:
     return conn.execute("SELECT 1 FROM bills WHERE gmail_message_id = ?", (message_id,)).fetchone() is not None
 

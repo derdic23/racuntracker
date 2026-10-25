@@ -11,12 +11,20 @@
   <header>
     <a class="brand" href="{{ url_for('bills.index') }}">RačunTracker</a>
     {% if session.logged_in %}
-    <form method="post" action="{{ url_for('auth.logout') }}">
-      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-      <button class="link">Odjava</button>
-    </form>
+    <nav>
+      <a href="{{ url_for('settings.index') }}">Podešavanja</a>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <button class="link">Odjava</button>
+      </form>
+    </nav>
     {% endif %}
   </header>
-  <main>{% block content %}{% endblock %}</main>
+  <main>
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+    <p class="flash {{ category }}" role="status">{{ message }}</p>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>

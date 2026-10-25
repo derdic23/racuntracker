@@ -1,6 +1,6 @@
 """Manual commands.
 
-    python cli.py fetch                 # check Gmail now (credentials from .env)
+    python cli.py fetch                 # check Gmail now (Podešavanja, else .env)
     python cli.py parse FILE.eml...     # parse local .eml files, print the result
     python cli.py parse --save FILE...  # ...and store them in the database
 """
@@ -12,7 +12,7 @@ from imap_tools import MailMessage
 
 from app import config
 from app.db import connect, mark_reported_debts
-from app.fetcher import Result, check, fetch, process_message
+from app.fetcher import Result, check, credentials, fetch, process_message
 from app.providers import find_provider
 
 
@@ -58,11 +58,12 @@ def cmd_parse(args) -> int:
 
 
 def cmd_fetch(args) -> int:
-    if not (config.GMAIL_ADDRESS and config.GMAIL_APP_PASSWORD):
-        print("Podesi GMAIL_ADDRESS i GMAIL_APP_PASSWORD u .env", file=sys.stderr)
-        return 1
     conn = connect(config.DB_PATH)
-    results = fetch(conn, config.GMAIL_ADDRESS, config.GMAIL_APP_PASSWORD, config.GMAIL_LABEL, config.PDF_DIR, config.MAX_AMOUNT)
+    address, password, label = credentials(conn, config.SECRET_KEY)
+    if not (address and password):
+        print("Podesi Gmail u Podešavanjima ili GMAIL_ADDRESS i GMAIL_APP_PASSWORD u .env", file=sys.stderr)
+        return 1
+    results = fetch(conn, address, password, label, config.PDF_DIR, config.MAX_AMOUNT)
     for r in results:
         print_result(r)
     print(f"Novih računa: {sum(1 for r in results if r.bill_id)}")

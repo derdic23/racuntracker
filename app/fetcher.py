@@ -8,7 +8,9 @@ from pathlib import Path
 from imap_tools import OR, MailBox, MailMessage
 from imap_tools.errors import MailboxFolderSelectError
 
-from .db import has_message, insert_bill
+from . import config
+from .crypto import decrypt
+from .db import get_settings, has_message, insert_bill
 from .providers import ParsedBill, all_senders, find_provider
 from .validation import validate
 
@@ -78,3 +80,20 @@ def fetch(conn: sqlite3.Connection, address: str, password: str, label: str, pdf
                 if result:
                     results.append(result)
     return results
+
+
+def credentials(conn: sqlite3.Connection, secret_key: str) -> tuple[str, str, str]:
+    """Gmail address, app password and label from Podešavanja; .env if Podešavanja are not filled in."""
+    s = get_settings(conn)
+    password = decrypt(secret_key, s["gmail_password"]) if s.get("gmail_password") else None
+    if s.get("gmail_address") and password:
+        return s["gmail_address"], password, s.get("gmail_label") or config.GMAIL_LABEL
+    return config.GMAIL_ADDRESS, config.GMAIL_APP_PASSWORD, config.GMAIL_LABEL
+
+
+def try_login(address: str, password: str, label: str) -> str:
+    """Logs in and checks the label. Raises imap_tools/socket errors if the login fails."""
+    with MailBox(GMAIL_IMAP).login(address, password) as mailbox:
+        if not mailbox.folder.exists(label):
+            return f"Veza radi, ali labela '{label}' ne postoji. Računi će se tražiti samo po pošiljaocu."
+    return "Veza radi."

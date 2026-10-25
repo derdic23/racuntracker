@@ -17,6 +17,8 @@ def create_app(**overrides) -> Flask:
         APP_PASSWORD=config.APP_PASSWORD,
         DB_PATH=config.DB_PATH,
         PDF_DIR=config.PDF_DIR,
+        GMAIL_LABEL=config.GMAIL_LABEL,
+        MAX_AMOUNT=config.MAX_AMOUNT,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         # "Zapamti me"; renewed on every request, so it expires after 90 days without use
@@ -26,9 +28,10 @@ def create_app(**overrides) -> Flask:
     if not (app.config["SECRET_KEY"] and app.config["APP_PASSWORD"]):
         raise RuntimeError("Podesi SECRET_KEY i APP_PASSWORD u .env")
 
-    from .routes import auth, bills
+    from .routes import auth, bills, settings
     app.register_blueprint(auth.bp)
     app.register_blueprint(bills.bp)
+    app.register_blueprint(settings.bp)
     app.teardown_appcontext(bills.close_db)
     app.jinja_env.filters.update(rsd=bills.format_rsd, dmy=bills.format_date, account=bills.format_account)
 

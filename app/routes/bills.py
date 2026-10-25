@@ -1,12 +1,16 @@
+import imaplib
 import io
 from datetime import date
 from decimal import Decimal
 from itertools import groupby
 
-from flask import Blueprint, abort, current_app, g, redirect, render_template, request, send_file, send_from_directory, url_for
+from flask import (Blueprint, abort, current_app, flash, g, redirect, render_template, request, send_file,
+                   send_from_directory, url_for)
+from imap_tools.errors import ImapToolsError, MailboxLoginError
 
 from .. import ips
-from ..db import connect
+from ..db import connect, mark_reported_debts, unknown_customer_ids
+from ..fetcher import credentials, fetch
 
 bp = Blueprint("bills", __name__)
 
@@ -60,6 +64,12 @@ def days_left(row) -> int | None:
     return (date.fromisoformat(row["due_date"]) - date.today()).days if row["due_date"] else None
 
 
+def imap_error(e: Exception) -> str:
+    if isinstance(e, MailboxLoginError):
+        return "Prijava na Gmail nije uspela: proveri adresu i app password."
+    return f"Greška u vezi sa Gmail-om: {e}"
+
+
 def get_bill(bill_id: int):
     bill = get_db().execute("SELECT * FROM bills WHERE id = ?", (bill_id,)).fetchone()
     if bill is None:
@@ -67,14 +77,53 @@ def get_bill(bill_id: int):
     return bill
 
 
+def profile_name(row) -> str:
+    return row["profile"] or "Bez profila"
+
+
+def group(rows) -> list[tuple[str, list[tuple[str, list]]]]:
+    """[(month, [(profile, bills)])], keeping the order of rows within a profile."""
+    return [(month_label(m), [(p, list(bs)) for p, bs in groupby(sorted(ms, key=profile_name), key=profile_name)])
+            for m, ms in groupby(rows, key=billing_month)]
+
+
 @bp.get("/")
 def index():
-    rows = get_db().execute("SELECT * FROM bills").fetchall()
+    db = get_db()
+    rows = db.execute("""
+        SELECT b.*, p.full_name AS profile FROM bills b
+        LEFT JOIN customer_ids c ON c.provider = b.provider AND c.customer_id = b.customer_id
+        LEFT JOIN profiles p ON p.id = c.profile_id
+    """).fetchall()
     # Unpaid: oldest month first, by due date. Paid: newest month first.
     unpaid = sorted((r for r in rows if r["status"] == "unpaid"), key=lambda r: (billing_month(r), r["due_date"] or "9999"))
     paid = sorted((r for r in rows if r["status"] == "paid"), key=lambda r: (billing_month(r), r["due_date"] or ""), reverse=True)
-    group = lambda items: [(month_label(m), list(bs)) for m, bs in groupby(items, key=billing_month)]
-    return render_template("list.html", unpaid=group(unpaid), paid=group(paid), days_left=days_left)
+    profiles = db.execute("SELECT id, full_name FROM profiles ORDER BY full_name").fetchall()
+    return render_template("list.html", unpaid=group(unpaid), paid=group(paid), days_left=days_left,
+                           show_profiles=len({r["profile"] for r in rows}) > 1,
+                           unknown=unknown_customer_ids(db), profiles=profiles)
+
+
+@bp.post("/proveri-mejl")
+def check_mail():
+    db = get_db()
+    address, password, label = credentials(db, current_app.config["SECRET_KEY"])
+    if not (address and password):
+        flash("Gmail nije podešen. Upiši adresu i app password u Podešavanjima.", "error")
+        return redirect(url_for("bills.index"))
+    try:
+        # shortcut: runs inside the request (can take a while); the scheduler in phase 4 does this in the background
+        results = fetch(db, address, password, label, current_app.config["PDF_DIR"], current_app.config["MAX_AMOUNT"])
+    except (ImapToolsError, imaplib.IMAP4.error, OSError) as e:
+        flash(imap_error(e), "error")
+        return redirect(url_for("bills.index"))
+    new = [r for r in results if r.bill_id]
+    flash(f"Novih računa: {len(new)}." if new else "Nema novih računa.")
+    if review := sum(1 for r in new if r.verification != "verified"):
+        flash(f"Za proveru: {review}. Otvori račune označene sa \"proveriti\".", "error")
+    if debts := mark_reported_debts(db):
+        flash(f"mts prijavljuje neplaćene račune: {len(debts)}.", "error")
+    return redirect(url_for("bills.index"))
 
 
 @bp.get("/racun/<int:bill_id>")
