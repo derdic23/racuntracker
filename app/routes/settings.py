@@ -6,9 +6,10 @@ from imap_tools.errors import ImapToolsError
 
 from ..crypto import decrypt, encrypt
 from ..db import get_settings, set_settings
-from ..fetcher import credentials, try_login
+from ..fetcher import credentials, imap_error, try_login
 from ..providers import PROVIDERS
-from .bills import get_db, imap_error
+from ..scheduler import interval
+from .bills import get_db
 
 bp = Blueprint("settings", __name__, url_prefix="/podesavanja")
 
@@ -23,6 +24,9 @@ def index():
         "address": s.get("gmail_address", ""),
         "label": s.get("gmail_label") or current_app.config["GMAIL_LABEL"],
         "has_password": bool(s.get("gmail_password")),
+        "interval": interval(s),
+        "last_check_at": s.get("last_check_at"),
+        "last_check_error": s.get("last_check_error"),
         # Saved with a different SECRET_KEY
         "password_broken": bool(s.get("gmail_password")) and decrypt(current_app.config["SECRET_KEY"], s["gmail_password"]) is None,
     }
@@ -95,7 +99,12 @@ def delete_customer_id(row_id: int):
 
 @bp.post("/gmail")
 def save_gmail():
+    minutes = request.form.get("interval", type=int)
+    if minutes is None or not 0 <= minutes <= 1440:
+        flash("Interval provere je broj minuta od 0 do 1440.", "error")
+        return redirect(url_for("settings.index"))
     values = {
+        "check_interval": str(minutes),
         "gmail_address": request.form.get("address", "").strip(),
         "gmail_label": request.form.get("label", "").strip() or current_app.config["GMAIL_LABEL"],
     }

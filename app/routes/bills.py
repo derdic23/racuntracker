@@ -2,18 +2,19 @@ import calendar
 import imaplib
 import io
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from itertools import groupby
 
 import pypdfium2 as pdfium
 from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, send_file, url_for
-from imap_tools.errors import ImapToolsError, MailboxLoginError
+from imap_tools.errors import ImapToolsError
 from werkzeug.security import safe_join
 
 from .. import ips
-from ..db import connect, mark_reported_debts, unknown_customer_ids
-from ..fetcher import credentials, fetch
+from ..db import connect, get_settings, unknown_customer_ids
+from ..fetcher import imap_error
+from ..scheduler import check_mail as run_check
 
 bp = Blueprint("bills", __name__)
 
@@ -45,6 +46,11 @@ def format_date(value) -> str:
     return date.fromisoformat(value).strftime("%d.%m.%Y.") if value else "-"
 
 
+def format_datetime(value) -> str:
+    """"2026-10-15T08:30:00" -> "15.10.2026. 08:30" """
+    return datetime.fromisoformat(value).strftime("%d.%m.%Y. %H:%M")
+
+
 def format_account(value) -> str:
     """"205000000050610226" -> "205-506102-26" """
     if not value or len(value) != 18 or not value.isdigit():
@@ -65,12 +71,6 @@ def month_label(month: str) -> str:
 
 def days_left(row) -> int | None:
     return (date.fromisoformat(row["due_date"]) - date.today()).days if row["due_date"] else None
-
-
-def imap_error(e: Exception) -> str:
-    if isinstance(e, MailboxLoginError):
-        return "Prijava na Gmail nije uspela: proveri adresu i app password."
-    return f"Greška u vezi sa Gmail-om: {e}"
 
 
 def get_bill(bill_id: int):
@@ -106,7 +106,7 @@ def index():
     return render_template("list.html", unpaid=group(unpaid), paid=group(paid), days_left=days_left,
                            unpaid_count=len(unpaid), paid_count=len(paid),
                            show_profiles=len({r["profile"] for r in rows}) > 1,
-                           unknown=unknown_customer_ids(db), profiles=profiles)
+                           unknown=unknown_customer_ids(db), profiles=profiles, settings=get_settings(db))
 
 
 @bp.get("/uputstvo")
@@ -140,22 +140,21 @@ def calendar_view():
 
 @bp.post("/proveri-mejl")
 def check_mail():
-    db = get_db()
-    address, password, label = credentials(db, current_app.config["SECRET_KEY"])
-    if not (address and password):
-        flash("Gmail nije podešen. Upiši adresu i app password u Podešavanjima.", "error")
-        return redirect(url_for("bills.index"))
     try:
-        # shortcut: runs inside the request (can take a while); the scheduler in phase 4 does this in the background
-        results = fetch(db, address, password, label, current_app.config["PDF_DIR"], current_app.config["MAX_AMOUNT"])
+        checked = run_check(get_db(), current_app.config["SECRET_KEY"], current_app.config["PDF_DIR"],
+                            current_app.config["MAX_AMOUNT"])
     except (ImapToolsError, imaplib.IMAP4.error, OSError) as e:
         flash(imap_error(e), "error")
         return redirect(url_for("bills.index"))
+    if checked is None:
+        flash("Gmail nije podešen. Upiši adresu i app password u Podešavanjima.", "error")
+        return redirect(url_for("bills.index"))
+    results, debts = checked
     new = [r for r in results if r.bill_id]
     flash(f"Novih računa: {len(new)}." if new else "Nema novih računa.")
     if review := sum(1 for r in new if r.verification != "verified"):
         flash(f"Za proveru: {review}. Otvori račune označene sa \"proveriti\".", "error")
-    if debts := mark_reported_debts(db):
+    if debts:
         flash(f"mts prijavljuje neplaćene račune: {len(debts)}.", "error")
     return redirect(url_for("bills.index"))
 

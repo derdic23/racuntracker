@@ -6,7 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from imap_tools import OR, MailBox, MailMessage
-from imap_tools.errors import MailboxFolderSelectError
+from imap_tools.errors import MailboxFolderSelectError, MailboxLoginError
 
 from . import config
 from .crypto import decrypt
@@ -97,3 +97,9 @@ def try_login(address: str, password: str, label: str) -> str:
         if not mailbox.folder.exists(label):
             return f"Veza radi, ali labela '{label}' ne postoji. Računi će se tražiti samo po pošiljaocu."
     return "Veza radi."
+
+
+def imap_error(e: Exception) -> str:
+    if isinstance(e, MailboxLoginError):
+        return "Prijava na Gmail nije uspela: proveri adresu i app password."
+    return f"Greška u vezi sa Gmail-om: {e}"

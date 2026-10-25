@@ -1,0 +1,11 @@
+services:
+  racuntracker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      TZ: Europe/Belgrade
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data

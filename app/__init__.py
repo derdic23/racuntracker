@@ -33,7 +33,7 @@ def create_app(**overrides) -> Flask:
     app.register_blueprint(bills.bp)
     app.register_blueprint(settings.bp)
     app.teardown_appcontext(bills.close_db)
-    app.jinja_env.filters.update(rsd=bills.format_rsd, dmy=bills.format_date, account=bills.format_account)
+    app.jinja_env.filters.update(rsd=bills.format_rsd, dmy=bills.format_date, dmyhm=bills.format_datetime, account=bills.format_account)
 
     @app.context_processor
     def csrf():

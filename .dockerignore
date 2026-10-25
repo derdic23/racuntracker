@@ -1,0 +1,9 @@
+# Private data stays out of the image; data/ comes in as a volume and .env through env_file
+.env
+data/
+samples/
+.git/
+.venv/
+tests/
+__pycache__/
+.pytest_cache/

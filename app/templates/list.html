@@ -37,6 +37,10 @@
   </button>
 </form>
 
+{% if settings.last_check_error %}
+<div class="alert">Provera mejla {{ settings.last_check_at | dmyhm }} nije uspela: {{ settings.last_check_error }}</div>
+{% endif %}
+
 {% for c in unknown %}
 <div class="alert">
   Nova šifra korisnika: {{ c.provider }} {{ c.customer_id }}. Kom profilu pripada?
