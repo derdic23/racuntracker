@@ -23,7 +23,7 @@
 <div class="settings-col">
 
 <section class="card">
-  <h2>Gmail {{ info("Nalog sa kog aplikacija čita račune: sama, na svakih N minuta, i na dugme \"Proveri mejl sada\".") }}</h2>
+  <h2>Gmail {{ info("Nalog sa kog aplikacija čita račune: sama, na svakih N minuta, i na dugme \"Ažuriraj\".") }}</h2>
   {% if gmail.password_broken %}
   <p class="alert">Sačuvani app password ne može da se pročita (promenjen je SECRET_KEY). Upiši ga ponovo.</p>
   {% endif %}
@@ -35,7 +35,7 @@
              placeholder="{{ 'sačuvan, ostavi prazno da ostane isti' if gmail.has_password else '16 slova iz Google naloga' }}">
     </label>
     <label>Labela {{ info("Gmail labela u koju filter stavlja račune. Prvo se čita ona, a zatim se računi traže po pošiljaocu u svim mejlovima i u spamu.") }} <input name="label" value="{{ gmail.label }}"></label>
-    <label>Interval provere (minuti) {{ info("Na koliko minuta aplikacija sama proverava mejl. 0 isključuje automatsku proveru; dugme \"Proveri mejl sada\" radi uvek.") }}
+    <label>Interval provere (minuti) {{ info("Na koliko minuta aplikacija sama proverava mejl. 0 isključuje automatsku proveru; dugme \"Ažuriraj\" radi uvek.") }}
       <input type="number" name="interval" value="{{ gmail.interval }}" min="0" max="1440" required></label>
     <p class="empty">Poslednja provera: {{ gmail.last_check_at | dmyhm if gmail.last_check_at else "još nije bilo" }}</p>
     {% if gmail.last_check_error %}<p class="alert">{{ gmail.last_check_error }}</p>{% endif %}
@@ -75,25 +75,28 @@
 
 <section class="card">
   <h2>Profili {{ info("Osobe na čije ime stižu računi. Kad ima više profila, računi na listi se grupišu po profilu.") }}</h2>
-  {% for p in profiles %}
-  <form class="fields" method="post" action="{{ url_for('settings.save_profile') }}">
-    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-    <input type="hidden" name="id" value="{{ p.id }}">
-    {{ profile_fields(p) }}
-    <div class="actions">
-      <button class="primary">Sačuvaj</button>
-      <button formaction="{{ url_for('settings.delete_profile', profile_id=p.id) }}"
-              data-confirm="Obrisati profil {{ p.full_name }}? Šifre korisnika ostaju, bez profila.">Obriši</button>
-    </div>
-  </form>
-  <hr>
-  {% endfor %}
   <form class="fields" method="post" action="{{ url_for('settings.save_profile') }}">
     <input type="hidden" name="csrf" value="{{ csrf_token() }}">
     <h3>Novi profil</h3>
     {{ profile_fields(none) }}
     <div class="actions"><button class="primary">Dodaj profil</button></div>
   </form>
+  {% for p in profiles %}
+  {% if loop.first %}<hr><h3>Sačuvani profili {{ info("Klikni na ime da vidiš i izmeniš podatke profila.") }}</h3>{% endif %}
+  <details class="profile">
+    <summary>{{ p.full_name }}</summary>
+    <form class="fields" method="post" action="{{ url_for('settings.save_profile') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="id" value="{{ p.id }}">
+      {{ profile_fields(p) }}
+      <div class="actions">
+        <button class="primary">Sačuvaj</button>
+        <button formaction="{{ url_for('settings.delete_profile', profile_id=p.id) }}"
+                data-confirm="Obrisati profil {{ p.full_name }}? Šifre korisnika ostaju, bez profila.">Obriši</button>
+      </div>
+    </form>
+  </details>
+  {% endfor %}
 </section>
 
 <section class="card">

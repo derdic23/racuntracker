@@ -86,6 +86,13 @@ input, select { font: inherit; padding: 10px; border: 1px solid var(--line); bor
 .id-row.add { border-bottom: 0; padding-top: 0; }
 .id-row.add select[name="provider"] { flex: 0 0 auto; }
 .alert form { margin-top: 8px; }
+/* Saved profiles in Podešavanja: only the name until opened */
+details.profile { border-bottom: 1px solid var(--line); }
+details.profile > summary { display: flex; align-items: center; gap: 10px; padding: 12px 0; cursor: pointer; font-weight: 600; list-style: none; }
+details.profile > summary::-webkit-details-marker { display: none; }
+details.profile > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+details.profile[open] > summary::before { transform: rotate(90deg); }
+details.profile > form { padding-bottom: 12px; }
 /* Podešavanja servera: fields stay locked until their edit button is clicked */
 .locked { display: flex; gap: 8px; margin-top: 4px; }
 .fields .locked input { flex: 1; margin-top: 0; }
@@ -100,7 +107,7 @@ details.section[open] > summary::before { transform: rotate(90deg); }
 details.section > summary h1 { margin: 0; line-height: 1.2; }
 .count { font-size: .85rem; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 0 8px; }
 
-/* "Proveri mejl sada": floats at the bottom right so it does not take space at the top */
+/* "Ažuriraj": floats at the bottom right so it does not take space at the top */
 main { padding-bottom: 88px; }
 .fab { position: fixed; right: 16px; bottom: 16px; z-index: 10; margin: 0; }
 .fab button { display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 12px 18px; box-shadow: 0 4px 14px rgba(0, 0, 0, .25); }

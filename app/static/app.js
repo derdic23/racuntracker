@@ -19,7 +19,7 @@ document.addEventListener("click", (e) => {
   input.focus();
 });
 
-// "Proveri mejl sada" can take a while
+// "Ažuriraj" can take a while
 document.addEventListener("submit", (e) => {
   const button = e.submitter;
   if (button && button.dataset.busy) {

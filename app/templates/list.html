@@ -31,9 +31,9 @@
 {% block content %}
 <form class="fab" method="post" action="{{ url_for('bills.check_mail') }}">
   <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-  <button class="primary" data-busy="Proveravam..." title="Preuzmi nove račune sa Gmail-a">
+  <button class="primary" data-busy="Ažuriram..." title="Preuzmi nove račune sa Gmail-a">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 6l9 7 9-7"/></svg>
-    <span>Proveri mejl sada</span>
+    <span>Ažuriraj</span>
   </button>
 </form>
 

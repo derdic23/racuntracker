@@ -10,7 +10,7 @@ from .db import connect, get_settings, mark_reported_debts, set_settings
 from .fetcher import Result, credentials, fetch, imap_error
 
 DEFAULT_INTERVAL = 60  # minutes
-LOCK = threading.Lock()  # one check at a time: the scheduler or "Proveri mejl sada"
+LOCK = threading.Lock()  # one check at a time: the scheduler or "Ažuriraj"
 
 
 def interval(settings: dict[str, str]) -> int:

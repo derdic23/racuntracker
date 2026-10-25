@@ -51,7 +51,7 @@ Aplikacija je namenjena kućnom serveru i otvara se iz browsera na telefonu ili 
 
 7. U aplikaciji otvori **Podešavanja**:
    - **Gmail**: adresa, app password i labela. App password se pravi u Google nalogu (Bezbednost > Lozinke za aplikacije) i traži uključenu verifikaciju u dva koraka. Klikni "Testiraj vezu".
-   - **Interval provere**: na koliko minuta aplikacija sama proverava mejl (podrazumevano 60, 0 isključuje). Dugme "Proveri mejl sada" na listi radi uvek.
+   - **Interval provere**: na koliko minuta aplikacija sama proverava mejl (podrazumevano 60, 0 isključuje). Dugme "Ažuriraj" na listi radi uvek.
    - **Profili** i **šifre korisnika**, ako računi stižu na više osoba.
 
 ## Pristup samo iz kućne mreže
