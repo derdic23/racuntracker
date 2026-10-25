@@ -24,14 +24,17 @@
   <h2>{{ month }}</h2>
   {% for profile, bills in groups %}
     {% if show_profiles %}<h3>{{ profile }}</h3>{% endif %}
-    {% for bill in bills %}{{ row(bill) }}{% endfor %}
+    <div class="bills">{% for bill in bills %}{{ row(bill) }}{% endfor %}</div>
   {% endfor %}
 {% else %}{{ caller() }}{% endfor %}
 {% endmacro %}
 {% block content %}
-<form class="toolbar" method="post" action="{{ url_for('bills.check_mail') }}">
+<form class="fab" method="post" action="{{ url_for('bills.check_mail') }}">
   <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-  <button data-busy="Proveravam...">Proveri mejl sada</button>
+  <button class="primary" data-busy="Proveravam..." title="Preuzmi nove račune sa Gmail-a">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 6l9 7 9-7"/></svg>
+    <span>Proveri mejl sada</span>
+  </button>
 </form>
 
 {% for c in unknown %}
@@ -52,13 +55,17 @@
 </div>
 {% endfor %}
 
-<h1>Neplaćeni</h1>
-{% call month_groups(unpaid) %}
-  <p class="empty">Nema neplaćenih računa.</p>
-{% endcall %}
+<details class="section" id="neplaceni" open>
+  <summary><h1>Neplaćeni</h1><span class="count">{{ unpaid_count }}</span></summary>
+  {% call month_groups(unpaid) %}
+    <p class="empty">Nema neplaćenih računa.</p>
+  {% endcall %}
+</details>
 
-<h1>Plaćeni</h1>
-{% call month_groups(paid) %}
-  <p class="empty">Nema plaćenih računa.</p>
-{% endcall %}
+<details class="section" id="placeni" open>
+  <summary><h1>Plaćeni</h1><span class="count">{{ paid_count }}</span></summary>
+  {% call month_groups(paid) %}
+    <p class="empty">Nema plaćenih računa.</p>
+  {% endcall %}
+</details>
 {% endblock %}

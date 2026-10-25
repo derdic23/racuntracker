@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Uputstvo{% endblock %}
+{% block heading %}Uputstvo{% endblock %}
+{% block content %}
+<div class="guide">
+<h1>Uputstvo</h1>
+<p class="lead">RačunTracker sam pronalazi mts račune u Gmail-u, čita iznos, rok i podatke za uplatu i prikazuje ih na jednom mestu.
+Ovde je objašnjeno, korak po korak, kako da ih pratiš, platiš i obeležiš kao plaćene.</p>
+
+<nav class="card toc" aria-label="Sadržaj">
+  <h2>Sadržaj</h2>
+  <ol>
+    <li><a href="#svaki-mesec">Šta se radi svakog meseca (ukratko)</a></li>
+    <li><a href="#zaglavlje">Dugmad na vrhu stranice</a></li>
+    <li><a href="#lista">Početna stranica: lista računa</a></li>
+    <li><a href="#oznake">Šta znače boje i oznake</a></li>
+    <li><a href="#racun">Stranica jednog računa</a></li>
+    <li><a href="#ips">Plaćanje preko QR koda (IPS)</a></li>
+    <li><a href="#mts">Plaćanje na mts sajtu</a></li>
+    <li><a href="#stampa">Štampanje računa</a></li>
+    <li><a href="#placeno">Obeležavanje plaćenog računa</a></li>
+    <li><a href="#novi">Preuzimanje novih računa</a></li>
+    <li><a href="#kalendar">Kalendar</a></li>
+    <li><a href="#podesavanja">Podešavanja</a></li>
+    <li><a href="#problemi">Kada nešto ne radi</a></li>
+  </ol>
+</nav>
+
+<section class="card monthly" id="svaki-mesec">
+  <h2>1. Šta se radi svakog meseca (ukratko)</h2>
+  <p>Kada stigne novi račun, uradi ovih pet koraka, redom:</p>
+  <ol class="steps">
+    <li><b>Otvori RačunTracker.</b> Novi računi se pojave sami (ili klikni <b>Proveri mejl</b> u suprotnom).</li>
+    <li><b>Otvori račun.</b> U delu <b>Neplaćeni</b> klikni na račun koji treba da se plati. Račun sa crvenom pozadinom je već zakasnio, njega plati prvog.</li>
+    <li><b>Plati račun.</b> Skeniraj QR kod aplikacijom banke (<a href="#ips">deo 6</a>) ili klikni <b>Plati na mts sajtu</b> (<a href="#mts">deo 7</a>). Pre potvrde u banci proveri da je iznos isti kao na računu.</li>
+    <li><b>Obeleži kao plaćeno.</b> Kada uplata prođe, klikni <b>Obeleži kao plaćeno</b>. Račun prelazi u deo <b>Plaćeni</b>, pa se zna da je završen.</li>
+    <li><b>Odštampaj račun.</b> Klikni <b>Štampaj račun</b>, pa u prozoru koji se otvori klikni ikonicu štampača (ili pritisni Ctrl+P). Štampa se samo prva strana, sa uplatnicom (<a href="#stampa">deo 8</a>).</li>
+  </ol>
+  <p class="note">To je sve. Ostatak uputstva objašnjava svaki deo detaljno.</p>
+</section>
+
+<section class="card" id="zaglavlje">
+  <h2>2. Dugmad na vrhu stranice</h2>
+  <dl>
+    <dt>Kućica</dt><dd>Vraća na početnu stranicu sa listom računa. Isto radi i klik na natpis <b>RačunTracker</b> u sredini.</dd>
+    <dt>Uputstvo</dt><dd>Ova stranica.</dd>
+    <dt>Koverta</dt><dd>Otvara Gmail u novom tabu, ako želiš da pogledaš sam mejl.</dd>
+    <dt>Kalendar</dt><dd>Prikaz računa po danima: kada je koji stigao i do kada mora da se plati.</dd>
+    <dt>Podešavanja</dt><dd>Gmail nalog, osobe (profili) i šifre korisnika. Obično se podesi jednom.</dd>
+    <dt>Odjava</dt><dd>Zaključava aplikaciju. Koristi je na tuđem ili zajedničkom računaru.</dd>
+  </dl>
+  <p class="note">Na telefonu se vide samo ikonice, bez teksta. Rade isto.</p>
+</section>
+
+<section class="card" id="lista">
+  <h2>3. Početna stranica: lista računa</h2>
+  <ul>
+    <li>Računi su podeljeni u dva dela: <b>Neplaćeni</b> (gore) i <b>Plaćeni</b> (dole). Broj pored naslova je koliko računa ima u tom delu.</li>
+    <li>Klik na naslov <b>Neplaćeni</b> ili <b>Plaćeni</b> sklapa taj deo, da ne moraš da skroluješ. Ponovni klik ga otvara. Aplikacija pamti šta si sklopio.</li>
+    <li>Unutar svakog dela računi su grupisani po mesecu, najnoviji na vrhu.</li>
+    <li>Ako ima više osoba (profila), računi su u okviru meseca podeljeni i po osobi.</li>
+    <li>Svaki red pokazuje: provajdera i šifru korisnika (npr. <i>mts 12345678/2</i>), iznos i koliko je dana ostalo do roka.</li>
+    <li>Klik na red otvara taj račun.</li>
+  </ul>
+  <p>Ako stigne račun sa šifrom korisnika koju aplikacija još ne zna, na vrhu se pojavi žuto obaveštenje <i>Nova šifra korisnika</i>.
+  Izaberi kojoj osobi pripada i klikni <b>Sačuvaj</b>. Ako osoba još ne postoji, prvo je napravi u Podešavanjima.</p>
+</section>
+
+<section class="card" id="oznake">
+  <h2>4. Šta znače boje i oznake</h2>
+  <dl>
+    <dt><span class="swatch red"></span>Crvena linija levo</dt><dd>Račun nije plaćen.</dd>
+    <dt><span class="swatch overdue"></span>Crvena pozadina</dt><dd>Rok za plaćanje je prošao. Plati ga što pre.</dd>
+    <dt><span class="swatch grey"></span>Sivo</dt><dd>Račun je plaćen.</dd>
+    <dt><span class="tag warn">dug ...</span></dt><dd>Na ovom računu mts piše da postoji dug iz prethodnog perioda. Taj dug <b>nije</b> uračunat u iznos ovog računa: znači da prethodni račun verovatno nije plaćen.</dd>
+    <dt><span class="tag warn">mts: nije plaćen</span></dt><dd>Sledeći mts račun prijavljuje dug za ovaj period, znači da mts ovu uplatu nije video. Proveri u banci da li je plaćen.</dd>
+    <dt><span class="tag warn">proveriti</span></dt><dd>Podaci na računu se ne slažu u svim izvorima (mejl, PDF, QR kod). Pre plaćanja otvori PDF i uporedi iznos i poziv na broj.</dd>
+  </dl>
+</section>
+
+<section class="card" id="racun">
+  <h2>5. Stranica jednog računa</h2>
+  <p>Na stranici računa su tri dela:</p>
+  <ul>
+    <li><b>Podaci</b> (levo): iznos, rok, status, šifra korisnika, period, poziv na broj... Svaki podatak može da se označi mišem i kopira.</li>
+    <li><b>Plati IPS-om</b> (sredina): QR kod za plaćanje iz aplikacije banke.</li>
+    <li><b>Plati</b> (desno): plaćanje na mts sajtu, štampanje i PDF.</li>
+  </ul>
+  <p>Iznad toga mogu da stoje žuta upozorenja (dug, sumnjiv mejl, podaci za proveru). Pročitaj ih pre plaćanja.</p>
+  <p class="note"><b>Sumnjiv mejl</b> znači da nije potvrđeno da je mejl stvarno poslao mts. Takav račun ne plaćaj dok ne proveriš PDF i ne uporediš ga sa prethodnim računima.</p>
+</section>
+
+<section class="card" id="ips">
+  <h2>6. Plaćanje preko QR koda (IPS)</h2>
+  <p><b>Ako je RačunTracker otvoren na računaru:</b></p>
+  <ol>
+    <li>Na telefonu otvori aplikaciju svoje banke.</li>
+    <li>Izaberi plaćanje preko QR koda (zove se <i>IPS skeniraj</i>, <i>Skeniraj QR</i> ili slično).</li>
+    <li>Usmeri kameru telefona na QR kod na ekranu računara.</li>
+    <li>Banka sama popuni primaoca, iznos i poziv na broj. Proveri iznos i potvrdi uplatu.</li>
+  </ol>
+  <p><b>Ako je RačunTracker otvoren na telefonu:</b></p>
+  <ol>
+    <li>Klikni <b>Preuzmi QR</b>. Slika se sačuva u galeriju (ili u preuzimanja).</li>
+    <li>Otvori aplikaciju banke, izaberi plaćanje preko QR koda i opciju za učitavanje slike iz galerije.</li>
+    <li>Izaberi sačuvanu sliku, proveri iznos i potvrdi.</li>
+  </ol>
+  <p class="note">Ako iznad QR koda piše <i>QR je napravljen od nepotvrđenih podataka</i>, pre potvrde uplate uporedi iznos i poziv na broj sa PDF-om.</p>
+</section>
+
+<section class="card" id="mts">
+  <h2>7. Plaćanje na mts sajtu</h2>
+  <ol>
+    <li>U delu <b>Plati</b> klikni <b>Plati na mts sajtu</b>. Otvara se Moj mts u novom tabu.</li>
+    <li>Ako mts traži šifru korisnika ili iznos, nađeš ih levo u podacima računa. Označi ih mišem i kopiraj (Ctrl+C), pa nalepi (Ctrl+V).</li>
+    <li>Plati karticom kako mts sajt vodi.</li>
+  </ol>
+</section>
+
+<section class="card" id="stampa">
+  <h2>8. Štampanje računa</h2>
+  <ul>
+    <li><b>Štampaj račun</b> otvara samo prvu stranu, na kojoj su račun i uplatnica. To je ono što se nosi u poštu ili banku. Kada se otvori, klikni ikonicu štampača ili pritisni Ctrl+P.</li>
+    <li><b>Otvori PDF</b> otvara ceo originalni PDF iz mejla, sa svim stranama (spisak usluga i reklame).</li>
+  </ul>
+</section>
+
+<section class="card" id="placeno">
+  <h2>9. Obeležavanje plaćenog računa</h2>
+  <ol>
+    <li>Kada je uplata prošla, otvori račun i klikni <b>Obeleži kao plaćeno</b> (ispod podataka, levo).</li>
+    <li>Aplikacija upiše današnji datum kao datum plaćanja i račun prelazi u <b>Plaćeni</b>.</li>
+    <li>Ako si pogrešio, klikni <b>Vrati na neplaćeno</b>.</li>
+  </ol>
+  <p class="note">Ako mts u sledećem računu ipak prijavi dug za račun koji je obeležen kao plaćen, aplikacija ga sama vrati na neplaćen i doda oznaku <i>mts: nije plaćen</i>.</p>
+</section>
+
+<section class="card" id="novi">
+  <h2>10. Preuzimanje novih računa</h2>
+  <ul>
+    <li>Klikni plavo dugme <b>Proveri mejl sada</b> dole desno na početnoj stranici. Provera može da potraje do minut, sačekaj da se stranica osveži.</li>
+    <li>Na vrhu se pojavi poruka koliko je novih računa stiglo.</li>
+    <li>Proverava se samo pošta od mts-a (<i>eracun@mtsracun.rs</i>): labela <i>Racuni</i>, svi mejlovi i spam. Ostali mejlovi se ne čitaju.</li>
+    <li>Isti račun se nikad ne doda dva puta, pa dugme može slobodno da se klikne više puta.</li>
+  </ul>
+</section>
+
+<section class="card" id="kalendar">
+  <h2>11. Kalendar</h2>
+  <ul>
+    <li>Pokazuje jedan mesec. Strelicama ide na prethodni i sledeći mesec, a <b>Danas</b> vraća na tekući.</li>
+    <li><span class="ev stigao inline">plavo</span> je dan kada je račun izdat (stigao).</li>
+    <li><span class="ev rok inline">žuto</span> je rok za plaćanje, <span class="ev rok overdue inline">crveno</span> je rok koji je prošao, a sivo je plaćen račun.</li>
+    <li>Klik na oznaku otvara račun. Ispod kalendara je isti spisak u obliku liste.</li>
+    <li>Na telefonu su oznake samo obojene crtice. Detalji su u listi ispod kalendara.</li>
+  </ul>
+</section>
+
+<section class="card" id="podesavanja">
+  <h2>12. Podešavanja</h2>
+  <p>Pored svakog polja je ikonica <span class="info static">i</span>. Pređi mišem preko nje (na telefonu je dodirni) da vidiš šta polje radi.</p>
+  <h3>Gmail</h3>
+  <ol>
+    <li><b>Gmail adresa</b>: nalog na koji stižu mts računi.</li>
+    <li><b>App password</b>: posebna lozinka za aplikacije, <b>nije</b> obična Gmail lozinka. Pravi se ovako:
+      <ol type="a">
+        <li>Na Google nalogu mora biti uključena <i>Verifikacija u 2 koraka</i>.</li>
+        <li>Otvori <i>myaccount.google.com/apppasswords</i>, upiši ime (npr. RacunTracker) i klikni <i>Napravi</i>.</li>
+        <li>Google pokaže 16 slova. Kopiraj ih u polje App password i klikni <b>Sačuvaj</b>.</li>
+      </ol>
+      Lozinka se čuva šifrovana i posle se ne prikazuje. Ako polje ostaviš prazno, ostaje stara.</li>
+    <li><b>Labela</b>: ime Gmail labele u kojoj su računi (obično <i>Racuni</i>).</li>
+    <li>Klikni <b>Testiraj vezu</b>. Poruka <i>Veza radi.</i> znači da je sve dobro podešeno.</li>
+  </ol>
+  <h3>Profili</h3>
+  <p>Profil je osoba na čije ime stižu računi (npr. ti i roditelji). Upiši bar ime i prezime i klikni <b>Dodaj profil</b>.
+  Postojeći profil se menja tako što izmeniš polja i klikneš <b>Sačuvaj</b>. <b>Obriši</b> briše profil, ali ne i račune.</p>
+  <h3>Šifre korisnika</h3>
+  <p>Šifra korisnika je broj sa mts računa. Ovde se povezuje sa osobom, da bi se računi na listi grupisali po osobi.
+  Za postojeću šifru izaberi profil i klikni <b>Sačuvaj</b>. Novu šifru dodaješ u delu <b>Dodaj šifru</b>.</p>
+</section>
+
+<section class="card" id="problemi">
+  <h2>13. Kada nešto ne radi</h2>
+  <dl>
+    <dt>Ne stižu novi računi</dt><dd>Klikni <b>Proveri mejl sada</b>. Ako piše da Gmail nije podešen ili da prijava nije uspela, u Podešavanjima ponovo upiši app password i klikni <b>Testiraj vezu</b>.</dd>
+    <dt>„Sačuvani app password ne može da se pročita"</dt><dd>Upiši app password ponovo u Podešavanjima i sačuvaj.</dd>
+    <dt>Banka ne prepoznaje QR</dt><dd>Povećaj osvetljenost ekrana ili klikni <b>Preuzmi QR</b> i učitaj sliku iz galerije. Ako ni to ne radi, plati na mts sajtu ili po uplatnici iz <b>Štampaj račun</b>.</dd>
+    <dt>Iznos na računu izgleda pogrešno</dt><dd>Klikni <b>Otvori PDF</b> i uporedi. Pravi podatak je uvek onaj u PDF-u od mts-a.</dd>
+    <dt>Izbacilo me je iz aplikacije</dt><dd>Prijavi se ponovo. Ako pri prijavi označiš <i>Zapamti me</i>, ostaješ prijavljen 90 dana.</dd>
+  </dl>
+</section>
+</div>
+<button class="to-top" type="button" aria-label="Na vrh" title="Na vrh" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+{% endblock %}

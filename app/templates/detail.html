@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Račun {{ bill.reference }}{% endblock %}
+{% block heading %}Račun{% endblock %}
 {% block content %}
 <p><a href="{{ url_for('bills.index') }}">&larr; Svi računi</a></p>
 <h1>{{ bill.provider }} · {{ month }}</h1>
@@ -19,6 +20,7 @@
 <p class="alert">mts u <a href="{{ url_for('bills.detail', bill_id=reporter.id) }}">računu {{ reporter.reference }}</a> prijavljuje da ovaj račun nije plaćen.</p>
 {% endif %}
 
+<div class="detail-grid">
 <section class="card">
   <dl>
     <dt>Iznos</dt><dd class="big">{{ bill.amount | rsd }} din</dd>
@@ -56,19 +58,17 @@
   {% endif %}
 </section>
 
-{% if payment_url %}
-<section class="card">
-  <h2>Plati na mts sajtu</h2>
-  <a class="button primary" href="{{ payment_url }}" target="_blank" rel="noopener noreferrer">Otvori Moj mts</a>
-  <div class="copy"><span>Šifra korisnika</span><input readonly value="{{ bill.customer_id }}"><button type="button" data-copy>Kopiraj</button></div>
-  <div class="copy"><span>Iznos</span><input readonly value="{{ (bill.amount | rsd).replace('.', '') }}"><button type="button" data-copy>Kopiraj</button></div>
+{% if payment_url or bill.pdf_path %}
+<section class="card pay">
+  <h2>Plati</h2>
+  {% if payment_url %}
+  <a class="button primary" href="{{ payment_url }}" target="_blank" rel="noopener noreferrer">Plati na mts sajtu</a>
+  {% endif %}
+  {% if bill.pdf_path %}
+  <a class="button" href="{{ url_for('bills.pdf', bill_id=bill.id) }}" target="_blank" title="Samo prva strana, sa uplatnicom">Štampaj račun</a>
+  <a class="button" href="{{ url_for('bills.pdf', bill_id=bill.id, ceo=1) }}" target="_blank" title="Ceo PDF, sve strane">Otvori PDF</a>
+  {% endif %}
 </section>
 {% endif %}
-
-{% if bill.pdf_path %}
-<section class="card">
-  <h2>Štampaj</h2>
-  <a class="button" href="{{ url_for('bills.pdf', bill_id=bill.id) }}" target="_blank">Otvori PDF</a>
-</section>
-{% endif %}
+</div>
 {% endblock %}

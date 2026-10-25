@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Kalendar{% endblock %}
+{% block heading %}Kalendar{% endblock %}
+{% macro event(kind, bill, short=false) %}
+{%- set overdue = kind == 'rok' and bill.status == 'unpaid' and bill.due_date < today.isoformat() -%}
+<a class="ev {{ kind }} {{ bill.status }}{% if overdue %} overdue{% endif %}" href="{{ url_for('bills.detail', bill_id=bill.id) }}"
+   title="{{ 'Stigao račun' if kind == 'stigao' else 'Rok za plaćanje' }}: {{ bill.provider }} {{ bill.customer_id }}/{{ bill.sub_account }}, {{ bill.amount | rsd }} din{% if bill.status == 'paid' %} (plaćeno){% endif %}">
+  {%- if short %}<span>{{ 'stigao' if kind == 'stigao' else 'rok' }} {{ bill.provider }} {{ bill.amount | rsd }}</span>
+  {%- else %}{{ 'Stigao račun' if kind == 'stigao' else 'Rok za plaćanje' }} · {{ bill.provider }} {{ bill.customer_id }}/{{ bill.sub_account }} · {{ bill.amount | rsd }} din{% if bill.status == 'paid' %} · plaćeno{% endif %}{% endif -%}
+</a>
+{%- endmacro %}
+{% block content %}
+<div class="cal-head">
+  <a class="icon-button" href="{{ url_for('bills.calendar_view', mesec=previous) }}" aria-label="Prethodni mesec">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+  </a>
+  <h1>{{ title }}</h1>
+  <a class="icon-button" href="{{ url_for('bills.calendar_view', mesec=following) }}" aria-label="Sledeći mesec">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+  </a>
+  <a class="nav-button" href="{{ url_for('bills.calendar_view') }}">Danas</a>
+</div>
+<p class="legend"><span class="ev stigao">stigao račun</span> <span class="ev rok">rok za plaćanje</span> <span class="ev rok overdue">rok istekao</span> <span class="ev rok paid">plaćeno</span></p>
+
+<div class="calendar">
+  {% for name in ("Pon", "Uto", "Sre", "Čet", "Pet", "Sub", "Ned") %}<div class="weekday">{{ name }}</div>{% endfor %}
+  {% for week in weeks %}{% for day in week %}
+  <div class="day{% if day.month != first.month %} other{% endif %}{% if day == today %} today{% endif %}">
+    <span class="num">{{ day.day }}</span>
+    {% for kind, bill in events.get(day, []) %}{{ event(kind, bill, short=true) }}{% endfor %}
+  </div>
+  {% endfor %}{% endfor %}
+</div>
+
+<h2>Ovog meseca</h2>
+{% for day, kind, bill in agenda %}
+<div class="agenda"><span class="date">{{ day.strftime("%d.%m.") }}</span>{{ event(kind, bill) }}</div>
+{% else %}
+<p class="empty">Nema računa u ovom mesecu.</p>
+{% endfor %}
+{% endblock %}

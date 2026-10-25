@@ -50,7 +50,7 @@ def test_profiles_and_customer_ids(client):
     post(client, "/podesavanja/sifra", provider="mts", customer_id="87654321", profile_id="2")
     post(client, "/podesavanja/sifra", provider="eps", customer_id="1")  # unknown provider: refused
     html = client.get("/podesavanja/").get_data(as_text=True)
-    assert "mts 87654321" in html and "eps 1" not in html
+    assert "87654321" in html and "</span> 1</span>" not in html
 
     post(client, "/podesavanja/profil", id="1", full_name="Pera Perić", city="Novi Sad")
     assert 'value="Novi Sad"' in client.get("/podesavanja/").get_data(as_text=True)
@@ -58,7 +58,7 @@ def test_profiles_and_customer_ids(client):
     # Deleting the profile keeps the customer ID, without a profile
     post(client, "/podesavanja/profil/1/obrisi")
     html = client.get("/podesavanja/").get_data(as_text=True)
-    assert "Pera Perić" not in html and "mts 12345678" in html
+    assert "Pera Perić" not in html and "</span> 12345678</span>" in html
     assert "Nova šifra korisnika" not in client.get("/").get_data(as_text=True)
 
 

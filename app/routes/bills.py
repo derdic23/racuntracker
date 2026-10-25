@@ -1,12 +1,15 @@
+import calendar
 import imaplib
 import io
-from datetime import date
+import os
+from datetime import date, timedelta
 from decimal import Decimal
 from itertools import groupby
 
-from flask import (Blueprint, abort, current_app, flash, g, redirect, render_template, request, send_file,
-                   send_from_directory, url_for)
+import pypdfium2 as pdfium
+from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, send_file, url_for
 from imap_tools.errors import ImapToolsError, MailboxLoginError
+from werkzeug.security import safe_join
 
 from .. import ips
 from ..db import connect, mark_reported_debts, unknown_customer_ids
@@ -95,13 +98,44 @@ def index():
         LEFT JOIN customer_ids c ON c.provider = b.provider AND c.customer_id = b.customer_id
         LEFT JOIN profiles p ON p.id = c.profile_id
     """).fetchall()
-    # Unpaid: oldest month first, by due date. Paid: newest month first.
-    unpaid = sorted((r for r in rows if r["status"] == "unpaid"), key=lambda r: (billing_month(r), r["due_date"] or "9999"))
-    paid = sorted((r for r in rows if r["status"] == "paid"), key=lambda r: (billing_month(r), r["due_date"] or ""), reverse=True)
+    # Newest month first, latest due date first
+    newest = lambda r: (billing_month(r), r["due_date"] or "")
+    unpaid = sorted((r for r in rows if r["status"] == "unpaid"), key=newest, reverse=True)
+    paid = sorted((r for r in rows if r["status"] == "paid"), key=newest, reverse=True)
     profiles = db.execute("SELECT id, full_name FROM profiles ORDER BY full_name").fetchall()
     return render_template("list.html", unpaid=group(unpaid), paid=group(paid), days_left=days_left,
+                           unpaid_count=len(unpaid), paid_count=len(paid),
                            show_profiles=len({r["profile"] for r in rows}) > 1,
                            unknown=unknown_customer_ids(db), profiles=profiles)
+
+
+@bp.get("/uputstvo")
+def guide():
+    return render_template("guide.html")
+
+
+@bp.get("/kalendar")
+def calendar_view():
+    try:
+        first = date.fromisoformat(request.args.get("mesec", "") + "-01")
+    except ValueError:
+        first = date.today().replace(day=1)
+    month = first.isoformat()[:7]
+    rows = get_db().execute(
+        "SELECT * FROM bills WHERE substr(issue_date, 1, 7) = ? OR substr(due_date, 1, 7) = ?", (month, month)
+    ).fetchall()
+    # day -> [(kind, bill)]: the bill arrived (issue date) or is due that day
+    events: dict[date, list] = {}
+    for r in rows:
+        for kind, column in (("stigao", "issue_date"), ("rok", "due_date")):
+            if (r[column] or "")[:7] == month:
+                events.setdefault(date.fromisoformat(r[column]), []).append((kind, r))
+    weeks = calendar.Calendar(firstweekday=0).monthdatescalendar(first.year, first.month)
+    previous = (first - timedelta(days=1)).isoformat()[:7]
+    following = (first + timedelta(days=31)).isoformat()[:7]
+    return render_template("calendar.html", weeks=weeks, events=events, first=first, title=month_label(month),
+                           previous=previous, following=following, today=date.today(),
+                           agenda=sorted(((d, k, b) for d, es in events.items() for k, b in es), key=lambda e: e[0]))
 
 
 @bp.post("/proveri-mejl")
@@ -151,8 +185,19 @@ def pdf(bill_id: int):
     bill = get_bill(bill_id)
     if not bill["pdf_path"]:
         abort(404)
-    # send_from_directory refuses paths outside PDF_DIR
-    return send_from_directory(current_app.config["PDF_DIR"], bill["pdf_path"], mimetype="application/pdf")
+    # safe_join refuses paths outside PDF_DIR
+    path = safe_join(str(current_app.config["PDF_DIR"]), bill["pdf_path"])
+    if path is None or not os.path.isfile(path):
+        abort(404)
+    if "ceo" in request.args:
+        return send_file(path, mimetype="application/pdf", download_name=bill["pdf_path"])
+    # For printing: the bill is always on page 1; the rest is a service list and ads
+    src, out = pdfium.PdfDocument(path), pdfium.PdfDocument.new()
+    out.import_pages(src, [0])
+    buf = io.BytesIO()
+    out.save(buf)
+    buf.seek(0)
+    return send_file(buf, mimetype="application/pdf", download_name=bill["pdf_path"])
 
 
 @bp.post("/racun/<int:bill_id>/placeno")
