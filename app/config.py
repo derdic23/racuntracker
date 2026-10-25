@@ -16,3 +16,7 @@ GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 GMAIL_LABEL = os.environ.get("GMAIL_LABEL") or "Racuni"
 
 MAX_AMOUNT = Decimal(os.environ.get("MAX_AMOUNT") or "100000")
+
+# Web app: session signing key and the single login password
+SECRET_KEY = os.environ.get("SECRET_KEY", "")
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "")

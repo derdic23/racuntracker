@@ -4,4 +4,5 @@ pypdfium2==5.14.0
 zxing-cpp==3.1.1
 qrcode==8.2
 python-dotenv==1.2.4
+flask==3.1.2
 pytest==9.1.1

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% macro due(bill) %}
+  {%- set d = days_left(bill) -%}
+  {%- if d is none %}bez roka
+  {%- elif d < 0 %}rok istekao pre {{ -d }} {{ "dan" if -d % 10 == 1 and -d % 100 != 11 else "dana" }}
+  {%- elif d == 0 %}rok je danas
+  {%- else %}još {{ d }} {{ "dan" if d % 10 == 1 and d % 100 != 11 else "dana" }}{% endif -%}
+{% endmacro %}
+{% macro row(bill) %}
+<a class="bill {{ bill.status }}{% if bill.status == 'unpaid' and (days_left(bill) or 0) < 0 %} overdue{% endif %}"
+   href="{{ url_for('bills.detail', bill_id=bill.id) }}">
+  <span class="who">{{ bill.provider }} {{ bill.customer_id }}/{{ bill.sub_account }}</span>
+  <span class="amount">{{ bill.amount | rsd }} din</span>
+  <span class="due">
+    {% if bill.status == 'paid' %}plaćeno {{ bill.paid_at | dmy }}{% else %}{{ due(bill) }} ({{ bill.due_date | dmy }}){% endif %}
+  </span>
+  {% if bill.verification != 'verified' %}<span class="tag warn">proveriti</span>{% endif %}
+  {% if bill.previous_debt and bill.previous_debt | float > 0 %}<span class="tag warn">dug {{ bill.previous_debt | rsd }} din</span>{% endif %}
+  {% if bill.reported_unpaid_by %}<span class="tag warn">mts: nije plaćen</span>{% endif %}
+</a>
+{% endmacro %}
+{% block content %}
+<h1>Neplaćeni</h1>
+{% for month, bills in unpaid %}
+  <h2>{{ month }}</h2>
+  {% for bill in bills %}{{ row(bill) }}{% endfor %}
+{% else %}
+  <p class="empty">Nema neplaćenih računa.</p>
+{% endfor %}
+
+<h1>Plaćeni</h1>
+{% for month, bills in paid %}
+  <h2>{{ month }}</h2>
+  {% for bill in bills %}{{ row(bill) }}{% endfor %}
+{% else %}
+  <p class="empty">Nema plaćenih računa.</p>
+{% endfor %}
+{% endblock %}

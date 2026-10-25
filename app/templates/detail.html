@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Račun {{ bill.reference }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('bills.index') }}">&larr; Svi računi</a></p>
+<h1>{{ bill.provider }} · {{ month }}</h1>
+
+{% if bill.verification == 'suspicious' %}
+<p class="alert">Sumnjiv mejl: nije potvrđeno da je račun stvarno poslao izdavalac. Ne plaćaj dok ne proveriš PDF i podatke.</p>
+{% elif bill.verification == 'needs_review' %}
+<p class="alert">Podaci nisu potvrđeni u svim izvorima. Pre plaćanja uporedi iznos i poziv na broj sa PDF-om.</p>
+{% endif %}
+{% if bill.review_notes %}
+<ul class="notes">{% for note in bill.review_notes.splitlines() %}<li>{{ note }}</li>{% endfor %}</ul>
+{% endif %}
+{% if bill.previous_debt and bill.previous_debt | float > 0 %}
+<p class="alert">Dug iz prethodnog perioda: {{ bill.previous_debt | rsd }} din. Nije uključen u iznos ovog računa.</p>
+{% endif %}
+{% if reporter %}
+<p class="alert">mts u <a href="{{ url_for('bills.detail', bill_id=reporter.id) }}">računu {{ reporter.reference }}</a> prijavljuje da ovaj račun nije plaćen.</p>
+{% endif %}
+
+<section class="card">
+  <dl>
+    <dt>Iznos</dt><dd class="big">{{ bill.amount | rsd }} din</dd>
+    <dt>Rok za plaćanje</dt>
+    <dd>{{ bill.due_date | dmy }}
+      {% if bill.status == 'unpaid' and days_left is not none %}
+        {% if days_left < 0 %}<span class="tag overdue">rok istekao</span>{% else %}(još {{ days_left }} d.){% endif %}
+      {% endif %}</dd>
+    <dt>Status</dt><dd>{% if bill.status == 'paid' %}plaćeno {{ bill.paid_at | dmy }}{% else %}<strong class="red">neplaćeno</strong>{% endif %}</dd>
+    <dt>Šifra korisnika/podračun</dt><dd>{{ bill.customer_id }}/{{ bill.sub_account }}</dd>
+    <dt>Broj računa</dt><dd>{{ bill.bill_number or '-' }}</dd>
+    <dt>Period</dt><dd>{{ bill.period_from | dmy }} - {{ bill.period_to | dmy }}</dd>
+    <dt>Datum izdavanja</dt><dd>{{ bill.issue_date | dmy }}</dd>
+    <dt>Račun primaoca</dt><dd>{{ bill.recipient_account | account }}</dd>
+    <dt>Model i poziv na broj</dt><dd>{{ bill.model }} {{ bill.reference }}</dd>
+  </dl>
+  <form method="post" action="{{ url_for('bills.toggle_paid', bill_id=bill.id) }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    {% if bill.status == 'unpaid' %}
+    <button class="primary">Obeleži kao plaćeno</button>
+    {% else %}
+    <button>Vrati na neplaćeno</button>
+    {% endif %}
+  </form>
+</section>
+
+<section class="card">
+  <h2>Plati IPS-om</h2>
+  {% if bill.ips_string %}
+    {% if bill.verification != 'verified' %}<p class="alert">QR je napravljen od nepotvrđenih podataka.</p>{% endif %}
+    <img class="qr" src="{{ url_for('bills.qr', bill_id=bill.id) }}" alt="IPS QR kod za plaćanje">
+    <a class="button" href="{{ url_for('bills.qr', bill_id=bill.id, preuzmi=1) }}">Preuzmi QR</a>
+  {% else %}
+    <p>QR kod nije dostupan za ovaj račun.</p>
+  {% endif %}
+</section>
+
+{% if payment_url %}
+<section class="card">
+  <h2>Plati na mts sajtu</h2>
+  <a class="button primary" href="{{ payment_url }}" target="_blank" rel="noopener noreferrer">Otvori Moj mts</a>
+  <div class="copy"><span>Šifra korisnika</span><input readonly value="{{ bill.customer_id }}"><button type="button" data-copy>Kopiraj</button></div>
+  <div class="copy"><span>Iznos</span><input readonly value="{{ (bill.amount | rsd).replace('.', '') }}"><button type="button" data-copy>Kopiraj</button></div>
+</section>
+{% endif %}
+
+{% if bill.pdf_path %}
+<section class="card">
+  <h2>Štampaj</h2>
+  <a class="button" href="{{ url_for('bills.pdf', bill_id=bill.id) }}" target="_blank">Otvori PDF</a>
+</section>
+{% endif %}
+{% endblock %}
