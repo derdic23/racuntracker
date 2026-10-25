@@ -19,7 +19,8 @@ def create_app(**overrides) -> Flask:
         PDF_DIR=config.PDF_DIR,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+        # "Zapamti me"; renewed on every request, so it expires after 90 days without use
+        PERMANENT_SESSION_LIFETIME=timedelta(days=90),
     )
     app.config.update(overrides)
     if not (app.config["SECRET_KEY"] and app.config["APP_PASSWORD"]):

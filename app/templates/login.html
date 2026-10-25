@@ -5,6 +5,7 @@
   <h1>Prijava</h1>
   <input type="hidden" name="csrf" value="{{ csrf_token() }}">
   <label>Lozinka <input type="password" name="password" autocomplete="current-password" required autofocus></label>
+  <label class="check"><input type="checkbox" name="remember" checked> Zapamti me (90 dana)</label>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   <button class="primary">Prijavi se</button>
 </form>

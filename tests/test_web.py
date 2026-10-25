@@ -99,6 +99,15 @@ def test_mark_paid_and_back(app, client):
     assert "Obeleži kao plaćeno" in client.get(f"/racun/{bid}").get_data(as_text=True)
 
 
+def test_remember_me(app):
+    def login(**extra):
+        c = app.test_client()
+        r = c.post("/prijava", data={"password": PASSWORD, "csrf": csrf(c), **extra})
+        return r.headers["Set-Cookie"]
+    assert "Expires=" in login(remember="on")
+    assert "Expires=" not in login()  # browser-session cookie
+
+
 def test_logout(client):
     token = csrf(client, "/")
     client.post("/odjava", data={"csrf": token})

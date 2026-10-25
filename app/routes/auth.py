@@ -12,7 +12,8 @@ def login():
         password = request.form.get("password", "").encode()
         if hmac.compare_digest(password, current_app.config["APP_PASSWORD"].encode()):
             session.clear()  # new session, new CSRF token
-            session.permanent = True
+            # Unchecked: cookie ends when the browser closes
+            session.permanent = "remember" in request.form
             session["logged_in"] = True
             return redirect(url_for("bills.index"))
         error = "Pogrešna lozinka."

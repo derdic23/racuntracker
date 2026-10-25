@@ -56,4 +56,6 @@ button.link { border: 0; background: none; padding: 0; color: var(--accent); }
 
 .login { max-width: 360px; margin: 40px auto; }
 .login label { display: block; margin: 12px 0; }
-.login input { display: block; width: 100%; margin-top: 4px; font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+.login label.check { display: flex; align-items: center; gap: 8px; }
+.login input[type="checkbox"] { width: 20px; height: 20px; margin: 0; }
+.login input:not([type="checkbox"]) { display: block; width: 100%; margin-top: 4px; font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
