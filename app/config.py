@@ -5,7 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+ENV_PATH = BASE_DIR / ".env"
+load_dotenv(ENV_PATH)
 
 DATA_DIR = Path(os.environ.get("DATA_DIR") or BASE_DIR / "data")
 DB_PATH = DATA_DIR / "racuntracker.db"

@@ -33,10 +33,10 @@ Aplikacija je namenjena kućnom serveru i otvara se iz browsera na telefonu ili 
    mkdir -p data
    ```
 
-   Ako tvoj korisnik nema UID 1000 (proveri sa `id -u`), prepusti folder tom UID-u:
+   Ako tvoj korisnik nema UID 1000 (proveri sa `id -u`), prepusti folder i `.env` tom UID-u (`.env` se menja iz Podešavanja):
 
    ```bash
-   sudo chown -R 1000:1000 data
+   sudo chown -R 1000:1000 data .env
    ```
 
 5. Pokreni:
@@ -81,6 +81,12 @@ Logovi (greške automatske provere mejla se vide i na listi računa):
 
 ```bash
 docker compose logs -f
+```
+
+Posle izmene `.env` (u Podešavanjima ili ručno) restartuj aplikaciju:
+
+```bash
+docker compose restart
 ```
 
 Ručna provera mejla iz terminala:

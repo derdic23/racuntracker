@@ -183,3 +183,27 @@ def test_due():
     assert not scheduler.due({"check_interval": "0"}, now)
     assert not scheduler.due({"check_interval": "30", "last_check_at": "2026-10-25T11:45:00"}, now)
     assert scheduler.due({"check_interval": "30", "last_check_at": "2026-10-25T11:30:00"}, now)
+
+
+def test_env_editor(client, app, tmp_path):
+    from dotenv import dotenv_values
+    env = tmp_path / ".env"
+    env.write_text("# komentar\nSECRET_KEY=stari\nAPP_PASSWORD=tajna-q9z\nDATA_DIR=/x\n")
+    app.config["ENV_PATH"] = env
+    html = client.get("/podesavanja/").get_data(as_text=True)
+    assert "stari" not in html and "tajna-q9z" not in html  # secrets never shown
+
+    r = post(client, "/podesavanja/env", GMAIL_ADDRESS="a@gmail.com", GMAIL_LABEL="Moji računi #1", MAX_AMOUNT="5000")
+    assert ".env je sačuvan" in r.get_data(as_text=True)
+    values = dotenv_values(env)
+    assert values["SECRET_KEY"] == "stari" and values["DATA_DIR"] == "/x"  # empty secret keeps the old value
+    assert values["GMAIL_LABEL"] == "Moji računi #1" and values["MAX_AMOUNT"] == "5000"
+    assert env.read_text().startswith("# komentar\n")
+
+    post(client, "/podesavanja/env", APP_PASSWORD="it's \"x\" $HOME")
+    assert dotenv_values(env)["APP_PASSWORD"] == "it's \"x\" $HOME"
+
+    for bad in ({"MAX_AMOUNT": "abc"}, {"GMAIL_LABEL": "a\nB=1"}, {"APP_PASSWORD": "a${HOME}"}):
+        before = env.read_text()
+        assert "flash error" in post(client, "/podesavanja/env", **bad).get_data(as_text=True)
+        assert env.read_text() == before

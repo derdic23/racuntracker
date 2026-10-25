@@ -94,5 +94,21 @@
     <button class="primary">Dodaj</button>
   </form>
 </section>
+<section class="card">
+  <h2>.env {{ info("Podešavanja servera iz fajla .env. Promene važe tek posle restarta aplikacije (docker compose restart).") }}</h2>
+  <p class="alert">Promena SECRET_KEY odjavljuje sve i sačuvani Gmail app password više ne može da se pročita. Promena APP_PASSWORD menja lozinku za prijavu.</p>
+  <form class="fields" method="post" action="{{ url_for('settings.save_env') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    {% for key, secret in env_fields %}
+    {% if secret %}
+    <label>{{ key }} <input type="password" name="{{ key }}" autocomplete="new-password"
+           placeholder="{{ 'sačuvan, ostavi prazno da ostane isti' if env.get(key) else 'nije podešen' }}"></label>
+    {% else %}
+    <label>{{ key }} <input name="{{ key }}" value="{{ env.get(key, '') }}" autocomplete="off"></label>
+    {% endif %}
+    {% endfor %}
+    <div class="actions"><button class="primary" data-confirm="Sačuvati .env? Promene važe posle restarta.">Sačuvaj .env</button></div>
+  </form>
+</section>
 </div>
 {% endblock %}

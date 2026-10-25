@@ -1,4 +1,4 @@
-# Private data stays out of the image; data/ comes in as a volume and .env through env_file
+# Private data stays out of the image; data/ comes in as a volume and .env as a mounted file
 .env
 data/
 samples/

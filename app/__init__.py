@@ -19,6 +19,7 @@ def create_app(**overrides) -> Flask:
         PDF_DIR=config.PDF_DIR,
         GMAIL_LABEL=config.GMAIL_LABEL,
         MAX_AMOUNT=config.MAX_AMOUNT,
+        ENV_PATH=config.ENV_PATH,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         # "Zapamti me"; renewed on every request, so it expires after 90 days without use

@@ -2,10 +2,11 @@ services:
   racuntracker:
     build: .
     restart: unless-stopped
-    env_file: .env
     environment:
       TZ: Europe/Belgrade
     ports:
       - "5000:5000"
     volumes:
       - ./data:/app/data
+      # Read by the app on start and edited from Podešavanja; restart applies changes
+      - ./.env:/app/.env
