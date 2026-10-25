@@ -25,7 +25,7 @@
     <dt>Rok za plaćanje</dt>
     <dd>{{ bill.due_date | dmy }}
       {% if bill.status == 'unpaid' and days_left is not none %}
-        {% if days_left < 0 %}<span class="tag overdue">rok istekao</span>{% else %}(još {{ days_left }} d.){% endif %}
+        {% if days_left < 0 %}<span class="tag overdue">rok istekao</span>{% elif days_left == 0 %}(rok je danas){% else %}(još {{ days_left }} d.){% endif %}
       {% endif %}</dd>
     <dt>Status</dt><dd>{% if bill.status == 'paid' %}plaćeno {{ bill.paid_at | dmy }}{% else %}<strong class="red">neplaćeno</strong>{% endif %}</dd>
     <dt>Šifra korisnika/podračun</dt><dd>{{ bill.customer_id }}/{{ bill.sub_account }}</dd>

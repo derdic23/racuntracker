@@ -2,7 +2,7 @@
 {% macro due(bill) %}
   {%- set d = days_left(bill) -%}
   {%- if d is none %}bez roka
-  {%- elif d < 0 %}rok istekao pre {{ -d }} {{ "dan" if -d % 10 == 1 and -d % 100 != 11 else "dana" }}
+  {%- elif d < 0 %}rok istekao pre {{ -d }} dana
   {%- elif d == 0 %}rok je danas
   {%- else %}još {{ d }} {{ "dan" if d % 10 == 1 and d % 100 != 11 else "dana" }}{% endif -%}
 {% endmacro %}
@@ -16,7 +16,7 @@
   </span>
   {% if bill.verification != 'verified' %}<span class="tag warn">proveriti</span>{% endif %}
   {% if bill.previous_debt and bill.previous_debt | float > 0 %}<span class="tag warn">dug {{ bill.previous_debt | rsd }} din</span>{% endif %}
-  {% if bill.reported_unpaid_by %}<span class="tag warn">mts: nije plaćen</span>{% endif %}
+  {% if bill.reported_unpaid_by and bill.status == 'unpaid' %}<span class="tag warn">mts: nije plaćen</span>{% endif %}
 </a>
 {% endmacro %}
 {% block content %}
