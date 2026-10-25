@@ -5,16 +5,18 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
-# (key, secret): secret values are never shown; an empty field keeps the saved value
+# (key, label, tip, secret): secret values are never sent to the browser; an empty field keeps the saved value
 FIELDS = (
-    ("SECRET_KEY", True),
-    ("APP_PASSWORD", True),
-    ("GMAIL_ADDRESS", False),
-    ("GMAIL_APP_PASSWORD", True),
-    ("GMAIL_LABEL", False),
-    ("MAX_AMOUNT", False),
+    ("APP_PASSWORD", "Lozinka za prijavu", "Lozinka kojom se prijavljuješ u aplikaciju.", True),
+    ("SECRET_KEY", "Ključ za šifrovanje",
+     "Dugačak nasumičan niz kojim su potpisane prijave i šifrovan Gmail app password. Promena odjavljuje sve i app password mora ponovo da se upiše.", True),
+    ("GMAIL_ADDRESS", "Gmail adresa (rezervna)", "Koristi se samo ako Gmail adresa nije upisana u delu Gmail.", False),
+    ("GMAIL_APP_PASSWORD", "Gmail app password (rezervni)", "Koristi se samo ako Gmail podaci nisu upisani u delu Gmail.", True),
+    ("GMAIL_LABEL", "Podrazumevana labela", "Gmail labela kad u delu Gmail nije upisana nijedna. Prazno: Racuni.", False),
+    ("MAX_AMOUNT", "Granica iznosa (RSD)", "Račun veći od ovog iznosa dobija oznaku proveriti. Prazno: 100000.", False),
 )
 REQUIRED = {"SECRET_KEY", "APP_PASSWORD"}
+SECRETS = {key for key, *_, secret in FIELDS if secret}
 
 
 def read(path: Path) -> dict[str, str]:

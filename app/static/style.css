@@ -86,6 +86,12 @@ input, select { font: inherit; padding: 10px; border: 1px solid var(--line); bor
 .id-row.add { border-bottom: 0; padding-top: 0; }
 .id-row.add select[name="provider"] { flex: 0 0 auto; }
 .alert form { margin-top: 8px; }
+/* Podešavanja servera: fields stay locked until their edit button is clicked */
+.locked { display: flex; gap: 8px; margin-top: 4px; }
+.fields .locked input { flex: 1; margin-top: 0; }
+.locked input:disabled { opacity: .55; cursor: not-allowed; }
+.locked .edit { flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; }
+.locked .edit[hidden] { display: none; }
 
 details.section > summary { display: flex; align-items: center; gap: 10px; margin: 24px 0 8px; cursor: pointer; list-style: none; }
 details.section > summary::-webkit-details-marker { display: none; }
@@ -144,11 +150,11 @@ main { padding-bottom: 88px; }
 /* Wide screens: use the width instead of one long column */
 .bills { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0 12px; }
 .settings-grid, .detail-grid { display: grid; gap: 16px; align-items: start; }
-.settings-grid > .card, .detail-grid > .card { margin: 0; }
+.settings-col { display: flex; flex-direction: column; gap: inherit; min-width: 0; }
+.settings-col > .card, .detail-grid > .card { margin: 0; }
 .detail-grid { margin-top: 12px; }
 @media (min-width: 900px) {
   .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .settings-grid > .card:nth-child(2) { grid-row: span 2; }
   .detail-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); }
   .detail-grid .qr { max-width: 280px; }
 }

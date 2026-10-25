@@ -4,6 +4,21 @@ document.addEventListener("click", (e) => {
   if (button && !confirm(button.dataset.confirm)) e.preventDefault();
 });
 
+// Podešavanja servera: the edit button unlocks its field; a secret starts empty (empty keeps the saved value)
+document.addEventListener("click", (e) => {
+  const button = e.target.closest("[data-edit]");
+  if (!button) return;
+  e.preventDefault();
+  const input = button.parentElement.querySelector("input");
+  input.disabled = false;
+  if ("secret" in input.dataset) {
+    input.value = "";
+    input.placeholder = "nova vrednost, prazno: ostaje stara";
+  }
+  button.hidden = true;
+  input.focus();
+});
+
 // "Proveri mejl sada" can take a while
 document.addEventListener("submit", (e) => {
   const button = e.submitter;

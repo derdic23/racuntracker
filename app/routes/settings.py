@@ -135,17 +135,20 @@ def test_gmail():
 def save_env():
     path = current_app.config["ENV_PATH"]
     values = envfile.read(path)
-    for key, secret in envfile.FIELDS:
-        value = request.form.get(key, "").strip()
-        if value or not secret:  # empty secret: keep the saved one
+    # Locked fields are disabled in the form, so only the ones opened for editing arrive
+    for key, *_ in envfile.FIELDS:
+        if key not in request.form:
+            continue
+        value = request.form[key].strip()
+        if value or key not in envfile.SECRETS:  # empty secret: keep the saved one
             values[key] = value
     if error := envfile.validate(values):
         flash(error, "error")
         return redirect(url_for("settings.index"))
     try:
-        envfile.write(path, {key: values.get(key, "") for key, _ in envfile.FIELDS})
+        envfile.write(path, {key: values.get(key, "") for key, *_ in envfile.FIELDS})
     except OSError as e:
         flash(f".env ne može da se upiše: {e.strerror}", "error")
         return redirect(url_for("settings.index"))
-    flash(".env je sačuvan. Restartuj aplikaciju da promene važe.")
+    flash("Podešavanja servera su sačuvana. Restartuj aplikaciju da promene važe.")
     return redirect(url_for("settings.index"))

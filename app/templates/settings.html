@@ -20,6 +20,7 @@
 <p><a href="{{ url_for('bills.index') }}">&larr; Svi računi</a></p>
 <h1>Podešavanja</h1>
 <div class="settings-grid">
+<div class="settings-col">
 
 <section class="card">
   <h2>Gmail {{ info("Nalog sa kog aplikacija čita račune: sama, na svakih N minuta, i na dugme \"Proveri mejl sada\".") }}</h2>
@@ -45,6 +46,32 @@
     </div>
   </form>
 </section>
+
+<section class="card">
+  <h2>Podešavanja servera {{ info("Osnovna podešavanja aplikacije, upisana u fajl .env na serveru. Važe tek posle restarta aplikacije.") }}</h2>
+  <p class="alert">Promena ključa za šifrovanje odjavljuje sve, a sačuvani Gmail app password više ne može da se pročita. Promena lozinke za prijavu menja lozinku kojom ulaziš u aplikaciju.</p>
+  <form class="fields" method="post" action="{{ url_for('settings.save_env') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    {% for key, label, tip, secret in env_fields %}
+    <label>{{ label }} {{ info(tip) }}
+      <span class="locked">
+        {% if secret %}
+        {# Placeholder dots only: the real value never leaves the server #}
+        <input type="password" name="{{ key }}" value="{{ '••••••••' if env.get(key) }}" placeholder="nije podešeno" autocomplete="new-password" disabled data-secret>
+        {% else %}
+        <input name="{{ key }}" value="{{ env.get(key, '') }}" placeholder="nije podešeno" autocomplete="off" disabled>
+        {% endif %}
+        <button type="button" class="edit" data-edit aria-label="Izmeni: {{ label }}" title="Izmeni">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>
+        </button>
+      </span>
+    </label>
+    {% endfor %}
+    <div class="actions"><button class="primary" data-confirm="Sačuvati podešavanja servera? Promene važe posle restarta aplikacije.">Sačuvaj podešavanja</button></div>
+  </form>
+</section>
+</div>
+<div class="settings-col">
 
 <section class="card">
   <h2>Profili {{ info("Osobe na čije ime stižu računi. Kad ima više profila, računi na listi se grupišu po profilu.") }}</h2>
@@ -94,21 +121,6 @@
     <button class="primary">Dodaj</button>
   </form>
 </section>
-<section class="card">
-  <h2>.env {{ info("Podešavanja servera iz fajla .env. Promene važe tek posle restarta aplikacije (docker compose restart).") }}</h2>
-  <p class="alert">Promena SECRET_KEY odjavljuje sve i sačuvani Gmail app password više ne može da se pročita. Promena APP_PASSWORD menja lozinku za prijavu.</p>
-  <form class="fields" method="post" action="{{ url_for('settings.save_env') }}">
-    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-    {% for key, secret in env_fields %}
-    {% if secret %}
-    <label>{{ key }} <input type="password" name="{{ key }}" autocomplete="new-password"
-           placeholder="{{ 'sačuvan, ostavi prazno da ostane isti' if env.get(key) else 'nije podešen' }}"></label>
-    {% else %}
-    <label>{{ key }} <input name="{{ key }}" value="{{ env.get(key, '') }}" autocomplete="off"></label>
-    {% endif %}
-    {% endfor %}
-    <div class="actions"><button class="primary" data-confirm="Sačuvati .env? Promene važe posle restarta.">Sačuvaj .env</button></div>
-  </form>
-</section>
+</div>
 </div>
 {% endblock %}

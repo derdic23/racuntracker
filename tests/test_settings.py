@@ -194,14 +194,17 @@ def test_env_editor(client, app, tmp_path):
     assert "stari" not in html and "tajna-q9z" not in html  # secrets never shown
 
     r = post(client, "/podesavanja/env", GMAIL_ADDRESS="a@gmail.com", GMAIL_LABEL="Moji računi #1", MAX_AMOUNT="5000")
-    assert ".env je sačuvan" in r.get_data(as_text=True)
+    assert "Podešavanja servera su sačuvana" in r.get_data(as_text=True)
     values = dotenv_values(env)
     assert values["SECRET_KEY"] == "stari" and values["DATA_DIR"] == "/x"  # empty secret keeps the old value
     assert values["GMAIL_LABEL"] == "Moji računi #1" and values["MAX_AMOUNT"] == "5000"
     assert env.read_text().startswith("# komentar\n")
 
-    post(client, "/podesavanja/env", APP_PASSWORD="it's \"x\" $HOME")
-    assert dotenv_values(env)["APP_PASSWORD"] == "it's \"x\" $HOME"
+    assert 'name="GMAIL_ADDRESS" value="a@gmail.com"' in client.get("/podesavanja/").get_data(as_text=True)
+
+    post(client, "/podesavanja/env", APP_PASSWORD="it's \"x\" $HOME")  # only unlocked fields are sent
+    values = dotenv_values(env)
+    assert values["APP_PASSWORD"] == "it's \"x\" $HOME" and values["GMAIL_ADDRESS"] == "a@gmail.com"
 
     for bad in ({"MAX_AMOUNT": "abc"}, {"GMAIL_LABEL": "a\nB=1"}, {"APP_PASSWORD": "a${HOME}"}):
         before = env.read_text()
