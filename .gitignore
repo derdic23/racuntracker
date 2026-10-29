@@ -2,6 +2,7 @@
 samples/private/
 data/
 .env
+.env.bak
 
 __pycache__/
 *.pyc
