@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS customer_ids (
 CREATE TABLE IF NOT EXISTS bills (
     id INTEGER PRIMARY KEY,
     provider TEXT NOT NULL,
+    sender TEXT,                -- From address of the e-mail
     customer_id TEXT,
     sub_account TEXT,
     bill_number TEXT,
@@ -54,7 +55,7 @@ CREATE TABLE IF NOT EXISTS settings (
 """
 
 BILL_COLUMNS = (
-    "provider", "customer_id", "sub_account", "bill_number", "reference", "model",
+    "provider", "sender", "customer_id", "sub_account", "bill_number", "reference", "model",
     "recipient_account", "amount", "previous_debt", "issue_date", "due_date",
     "period_from", "period_to", "ips_string", "payment_url",
 )
@@ -69,6 +70,11 @@ def connect(path: Path) -> sqlite3.Connection:
     columns = {r["name"] for r in conn.execute("PRAGMA table_info(bills)")}
     if "reported_unpaid_by" not in columns:  # databases created before this column existed
         conn.execute("ALTER TABLE bills ADD COLUMN reported_unpaid_by INTEGER REFERENCES bills(id) ON DELETE SET NULL")
+    if "sender" not in columns:
+        with conn:
+            conn.execute("ALTER TABLE bills ADD COLUMN sender TEXT")
+            # Until this column existed only eracun@mtsracun.rs was accepted
+            conn.execute("UPDATE bills SET sender = 'eracun@mtsracun.rs' WHERE provider = 'mts'")
     return conn
 
 

@@ -11,7 +11,7 @@ from imap_tools.errors import MailboxFolderSelectError, MailboxLoginError
 from . import config
 from .crypto import decrypt
 from .db import get_settings, has_message, insert_bill
-from .providers import ParsedBill, all_senders, find_provider
+from .providers import ParsedBill, all_subjects, find_provider
 from .validation import validate
 
 GMAIL_IMAP = "imap.gmail.com"
@@ -56,7 +56,7 @@ def process_message(conn: sqlite3.Connection, message: MailMessage, pdf_dir: Pat
 
 
 def _folders(mailbox: MailBox, label: str) -> list[tuple[str, bool]]:
-    """(folder, filter_by_sender). The label holds only bills; All Mail and Spam are a fallback."""
+    """(folder, filter_by_subject). The label holds only bills; All Mail and Spam are a fallback."""
     folders = mailbox.folder.list()
     # Found by flag because Gmail localizes names; All Mail also covers archived mail, unlike INBOX
     all_mail = next((f.name for f in folders if "\\All" in f.flags), "INBOX")
@@ -67,13 +67,13 @@ def _folders(mailbox: MailBox, label: str) -> list[tuple[str, bool]]:
 def fetch(conn: sqlite3.Connection, address: str, password: str, label: str, pdf_dir: Path, max_amount: Decimal) -> list[Result]:
     results = []
     with MailBox(GMAIL_IMAP).login(address, password) as mailbox:
-        for folder, by_sender in _folders(mailbox, label):
+        for folder, by_subject in _folders(mailbox, label):
             try:
                 mailbox.folder.set(folder, readonly=True)
             except MailboxFolderSelectError:
                 print(f"Folder '{folder}' ne postoji, preskačem.")
                 continue
-            criteria = OR(from_=all_senders()) if by_sender else "ALL"
+            criteria = OR(subject=all_subjects()) if by_subject else "ALL"
             # shortcut: downloads every matching message each run; add a date filter if the mailbox gets large
             for message in mailbox.fetch(criteria, mark_seen=False):
                 result = process_message(conn, message, pdf_dir, max_amount)

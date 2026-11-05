@@ -11,5 +11,5 @@ def find_provider(message: MailMessage) -> Provider | None:
     return next((p for p in PROVIDERS if p.matches(message)), None)
 
 
-def all_senders() -> list[str]:
-    return [s for p in PROVIDERS for s in p.senders]
+def all_subjects() -> list[str]:
+    return [p.search_subject for p in PROVIDERS]

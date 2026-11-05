@@ -45,7 +45,7 @@ def test_needs_review_is_stored_with_notes(tmp_path):
 
 def test_non_bill_is_ignored(tmp_path):
     conn = connect(tmp_path / "test.db")
-    msg = MailMessage.from_bytes(build_eml(sender="news@example.com"))
+    msg = MailMessage.from_bytes(build_eml(subject="Novi mts paketi"))
     assert process_message(conn, msg, tmp_path / "pdfs", MAX) is None
 
 

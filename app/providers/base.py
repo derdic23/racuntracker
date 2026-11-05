@@ -9,6 +9,7 @@ from imap_tools import MailMessage
 @dataclass
 class ParsedBill:
     provider: str
+    sender: str | None = None  # From address of the e-mail
     customer_id: str | None = None
     sub_account: str | None = None
     bill_number: str | None = None
@@ -33,7 +34,7 @@ class ParsedBill:
 
 class Provider:
     name: str
-    senders: tuple[str, ...]
+    search_subject: str  # ASCII word for the Gmail IMAP SUBJECT search; matches() decides
 
     def matches(self, message: MailMessage) -> bool:
         raise NotImplementedError

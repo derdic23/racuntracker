@@ -36,10 +36,26 @@ def test_parses_all_fields():
     assert check(bill, MAX) == ("verified", [])
 
 
-def test_not_matching_other_sender_or_subject():
-    assert find_provider(message(sender="eracun@example.com")) is None
+def test_other_sender_with_bill_subject_is_suspicious():
+    msg = message(sender="someone@example.com")
+    bill = find_provider(msg).parse(msg)
+    assert bill.sender == "someone@example.com"
+    assert check(bill, MAX)[0] == "suspicious"
+
+
+def test_not_matching_other_subject():
     assert find_provider(message(subject="Novi mts paketi")) is None
+    assert find_provider(message(subject="Fwd: eRačun za mts usluge")) is None
     assert find_provider(message(subject="ERACUN ZA MTS USLUGE")) is not None
+
+
+def test_new_mts_rs_sender_is_recognized_and_authentic():
+    auth = ('mx.google.com; dkim=pass header.i=@mts.rs header.s=s1 header.b=X; '
+            'spf=pass (google.com: domain of bounces@em1612.mts.rs designates 192.0.2.1 as permitted sender) '
+            'smtp.mailfrom="bounces@em1612.mts.rs"; dmarc=pass header.from=mts.rs')
+    msg = message(sender="eracun@mts.rs", auth=auth)
+    assert find_provider(msg) is not None
+    assert is_authentic(msg)
 
 
 def test_failed_dkim_is_suspicious():

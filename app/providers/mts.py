@@ -13,8 +13,8 @@ from .. import ips
 from ..validation import digits, normalize_account, parse_amount, parse_date
 from .base import ParsedBill, Provider, normalize_text
 
-SENDER = "eracun@mtsracun.rs"
-DOMAIN = "mtsracun.rs"
+# mts sends from mts.rs since Nov 2026 and mtsracun.rs before
+DOMAINS = ("mts.rs", "mtsracun.rs")
 RECIPIENT_NAME = "Telekom Srbija A.D."
 PAYMENT_CODE = "189"
 
@@ -85,7 +85,7 @@ class _BodyParser(HTMLParser):
 
 
 def is_authentic(message: MailMessage) -> bool:
-    """DKIM and SPF must pass for mtsracun.rs in the header added by Gmail."""
+    """DKIM and SPF must pass for an mts domain in the header added by Gmail."""
     results = message.headers.get("authentication-results", ())
     # Only the topmost header comes from Gmail; lower ones could be added by the sender
     if not results or not results[0].strip().lower().startswith("mx.google.com"):
@@ -93,8 +93,10 @@ def is_authentic(message: MailMessage) -> bool:
     top = " ".join(results[0].split()).lower()  # unfold multi-line header
     dkim = re.findall(r"dkim=pass header\.i=@([\w.-]+)", top)
     spf = re.search(r"spf=pass .*?smtp\.mailfrom=\"?[^@\s\"]*@([\w.-]+)", top)
-    is_mts = lambda d: d == DOMAIN or d.endswith("." + DOMAIN)
-    return any(is_mts(d) for d in dkim) and bool(spf) and is_mts(spf.group(1))
+    is_mts = lambda d: any(d == m or d.endswith("." + m) for m in DOMAINS)
+    # From must be mts too: DKIM/SPF alone only prove which server sent the mail
+    from_ok = is_mts(message.from_.lower().rpartition("@")[2])
+    return from_ok and any(is_mts(d) for d in dkim) and bool(spf) and is_mts(spf.group(1))
 
 
 def parse_email_body(html: str) -> tuple[dict, str | None]:
@@ -132,19 +134,20 @@ def read_pdf(pdf_bytes: bytes) -> tuple[str, str | None]:
 
 class MtsProvider(Provider):
     name = "mts"
-    senders = (SENDER,)
+    search_subject = "mts"
 
     def matches(self, message: MailMessage) -> bool:
+        # Any sender: a bill from an unknown address is kept and marked suspicious by is_authentic
         subject = normalize_text(message.subject)
         return (
-            message.from_.lower() == SENDER
+            not subject.startswith(("fw:", "fwd:"))  # bills forwarded by the user are copies, not new mail
             and "eracun" in subject
             and "mts" in subject
             and any(a.content_type == "application/pdf" for a in message.attachments)
         )
 
     def parse(self, message: MailMessage) -> ParsedBill:
-        bill = ParsedBill(provider=self.name, authentic=is_authentic(message))
+        bill = ParsedBill(provider=self.name, sender=message.from_.lower(), authentic=is_authentic(message))
         errors = bill.parse_errors
 
         def attempt(label, fn):

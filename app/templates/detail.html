@@ -36,6 +36,7 @@
     <dt>Datum izdavanja</dt><dd>{{ bill.issue_date | dmy }}</dd>
     <dt>Račun primaoca</dt><dd>{{ bill.recipient_account | account }}</dd>
     <dt>Model i poziv na broj</dt><dd>{{ bill.model }} {{ bill.reference }}</dd>
+    <dt>Pošiljalac</dt><dd>{{ bill.sender or '-' }}</dd>
   </dl>
   <form method="post" action="{{ url_for('bills.toggle_paid', bill_id=bill.id) }}">
     <input type="hidden" name="csrf" value="{{ csrf_token() }}">
