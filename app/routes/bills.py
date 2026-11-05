@@ -165,7 +165,9 @@ def detail(bill_id: int):
     reporter = None
     if bill["reported_unpaid_by"]:
         reporter = get_db().execute("SELECT id, reference FROM bills WHERE id = ?", (bill["reported_unpaid_by"],)).fetchone()
-    payment_url = bill["payment_url"] if (bill["payment_url"] or "").startswith("https://") else None
+    # A suspicious mail's link can lead anywhere, so it gets no "pay on the mts site" button
+    trusted = bill["verification"] != "suspicious" and (bill["payment_url"] or "").startswith("https://")
+    payment_url = bill["payment_url"] if trusted else None
     return render_template("detail.html", bill=bill, reporter=reporter, payment_url=payment_url,
                            days_left=days_left(bill), month=month_label(billing_month(bill)))
 

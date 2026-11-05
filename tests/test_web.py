@@ -90,6 +90,16 @@ def test_detail_qr_and_pdf(app, client):
     assert client.get("/racun/999").status_code == 404
 
 
+def test_suspicious_bill_has_no_payment_link(app, client):
+    bid = bill_id(app, BILL["reference"])
+    conn = connect(app.config["DB_PATH"])
+    with conn:
+        conn.execute("UPDATE bills SET verification = 'suspicious' WHERE id = ?", (bid,))
+    conn.close()
+    html = client.get(f"/racun/{bid}").get_data(as_text=True)
+    assert "Sumnjiv mejl" in html and "Plati na mts sajtu" not in html
+
+
 def test_mark_paid_and_back(app, client):
     bid = bill_id(app, BILL["reference"])
     token = csrf(client, f"/racun/{bid}")

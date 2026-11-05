@@ -42,9 +42,6 @@ class Provider:
     def parse(self, message: MailMessage) -> ParsedBill:
         raise NotImplementedError
 
-    def payment_url(self, bill: ParsedBill) -> str | None:
-        return bill.payment_url
-
 
 def normalize_text(text: str) -> str:
     """Lowercase, no diacritics: `eRačun Đ` -> `eracun dj`."""

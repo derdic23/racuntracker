@@ -87,6 +87,17 @@ def test_payment_after_next_issue_is_kept(tmp_path):
     assert row["status"] == "paid" and row["reported_unpaid_by"]
 
 
+def test_debt_without_issue_date_keeps_payment(tmp_path):
+    conn = connect(tmp_path / "test.db")
+    store(conn, tmp_path, PREVIOUS_BILL, 1)
+    conn.execute("UPDATE bills SET status = 'paid', paid_at = '2026-09-20T10:00:00'")
+    store(conn, tmp_path, BILL, 2)
+    conn.execute("UPDATE bills SET issue_date = NULL WHERE reference = ?", (BILL["reference"],))
+    assert len(mark_reported_debts(conn)) == 1  # used to raise TypeError
+    row = conn.execute("SELECT * FROM bills WHERE reference = ?", (PREVIOUS_BILL["reference"],)).fetchone()
+    assert row["status"] == "paid" and row["reported_unpaid_by"]
+
+
 def test_no_debt_or_gap_marks_nothing(tmp_path):
     conn = connect(tmp_path / "test.db")
     store(conn, tmp_path, {**PREVIOUS_BILL, "period_to": "30.08.2026"}, 1)  # not adjacent

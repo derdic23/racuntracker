@@ -96,8 +96,9 @@ def mark_reported_debts(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     with conn:
         for p in pairs:
             conn.execute("UPDATE bills SET reported_unpaid_by = ? WHERE id = ?", (p["reporter_id"], p["id"]))
-            # Marked paid before the later bill was issued, yet mts still counts it as debt
-            if p["status"] == "paid" and (p["paid_at"] or "") < p["reporter_issue_date"]:
+            # Marked paid before the later bill was issued, yet mts still counts it as debt.
+            # Unknown issue date: cannot tell, so the payment is kept.
+            if p["status"] == "paid" and p["reporter_issue_date"] and (p["paid_at"] or "") < p["reporter_issue_date"]:
                 note = f"mts u računu {p['reporter_reference']} prijavljuje da ovaj račun nije plaćen."
                 conn.execute(
                     "UPDATE bills SET status = 'unpaid', paid_at = NULL, "
